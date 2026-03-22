@@ -10,6 +10,7 @@ import (
 	"github.com/svenliebig/jira-cli/internal/browser"
 	"github.com/svenliebig/jira-cli/internal/clipboard"
 	"github.com/svenliebig/jira-cli/internal/config"
+	"github.com/svenliebig/jira-cli/internal/exclusions"
 	"github.com/svenliebig/jira-cli/internal/jira"
 	"github.com/svenliebig/jira-cli/internal/tui/modals"
 	"github.com/svenliebig/jira-cli/internal/tui/shared"
@@ -22,6 +23,7 @@ const (
 	viewHome viewState = iota
 	viewIssueList
 	viewIssueDetail
+	viewExcludedList
 )
 
 type modalState int
@@ -34,6 +36,7 @@ const (
 	modalCopy
 	modalAI
 	modalTransition
+	modalExclude
 )
 
 // Model is the root bubbletea model.
@@ -48,9 +51,10 @@ type Model struct {
 	pendingKey  string
 
 	// View models
-	homeView        views.HomeModel
-	issueListView   views.IssueListModel
-	issueDetailView views.IssueDetailModel
+	homeView         views.HomeModel
+	issueListView    views.IssueListModel
+	issueDetailView  views.IssueDetailModel
+	excludedListView views.ExcludedListModel
 
 	// Modal models
 	authModal       modals.AuthModal
@@ -59,18 +63,22 @@ type Model struct {
 	copyModal       modals.CopyModal
 	aiModal         modals.AIModal
 	transitionModal modals.TransitionModal
+	excludeModal    modals.ExcludeModal
 
 	// State
 	currentIssue *jira.Issue
+	allIssues    []jira.Issue
+	exclusions   *exclusions.Store
 	loading      bool
 	err          string
 	statusMsg    string
 }
 
-func New(cfg *config.Config, jiraClient *jira.Client) Model {
+func New(cfg *config.Config, jiraClient *jira.Client, store *exclusions.Store) Model {
 	m := Model{
 		cfg:        cfg,
 		jiraClient: jiraClient,
+		exclusions: store,
 	}
 	if !cfg.IsComplete() {
 		m.activeModal = modalAuth
@@ -101,7 +109,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case shared.IssueListLoadedMsg:
 		m.loading = false
-		m.issueListView = views.NewIssueListModel(msg.Issues, m.width, m.height-2)
+		m.allIssues = msg.Issues
+		filtered := m.exclusions.Filter(m.allIssues)
+		m.issueListView = views.NewIssueListModel(filtered, m.width, m.height-2)
 		m.currentView = viewIssueList
 		m.currentIssue = m.issueListView.CurrentIssue()
 		return m, nil
@@ -134,11 +144,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case shared.ListSelectedMsg:
 		m.activeModal = modalNone
-		if m.jiraClient != nil {
-			m.loading = true
-			return m, fetchAssignedCmd(m.jiraClient)
+		switch msg.Type {
+		case "excluded":
+			m.excludedListView = views.NewExcludedListModel(m.exclusions.Rules(), m.width, m.height-2)
+			m.currentView = viewExcludedList
+			m.currentIssue = nil
+		default: // "assigned"
+			if m.jiraClient != nil {
+				m.loading = true
+				return m, fetchAssignedCmd(m.jiraClient)
+			}
+			m.err = "Jira client not configured"
 		}
-		m.err = "Jira client not configured"
 		return m, nil
 
 	case shared.AuthCompletedMsg:
@@ -193,6 +210,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.pendingKey = ""
 		return m, nil
 
+	case shared.ExcludeActionMsg:
+		if m.exclusions != nil {
+			_ = m.exclusions.Add(exclusions.Rule{Type: msg.Type, Value: msg.Value})
+			filtered := m.exclusions.Filter(m.allIssues)
+			m.issueListView = views.NewIssueListModel(filtered, m.width, m.height-2)
+			m.currentIssue = m.issueListView.CurrentIssue()
+		}
+		m.activeModal = modalNone
+		m.statusMsg = "Issue excluded"
+		return m, nil
+
 	case shared.ErrMsg:
 		m.loading = false
 		m.err = msg.Err.Error()
@@ -233,6 +261,10 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.currentView == viewIssueList {
 			m.currentView = viewHome
 			m.currentIssue = nil
+			return m, nil
+		}
+		if m.currentView == viewExcludedList {
+			m.currentView = viewHome
 			return m, nil
 		}
 		return m, nil
@@ -316,6 +348,21 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.loading = true
 			return m, m.fetchTransitionsCmd()
 		}
+
+	case shared.KeyExclude:
+		if m.currentView == viewExcludedList {
+			if rule := m.excludedListView.CurrentRule(); rule != nil {
+				_ = m.exclusions.Remove(*rule)
+				m.excludedListView = views.NewExcludedListModel(m.exclusions.Rules(), m.width, m.height-2)
+				m.statusMsg = "Exclusion removed"
+			}
+			return m, nil
+		}
+		if m.currentIssue != nil {
+			m.excludeModal = modals.NewExcludeModal(m.currentIssue)
+			m.activeModal = modalExclude
+			return m, nil
+		}
 	}
 
 	// Delegate navigation to active view
@@ -349,6 +396,10 @@ func (m Model) updateActiveChild(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var updated tea.Model
 		updated, cmd = m.transitionModal.Update(msg)
 		m.transitionModal = updated.(modals.TransitionModal)
+	case modalExclude:
+		var updated tea.Model
+		updated, cmd = m.excludeModal.Update(msg)
+		m.excludeModal = updated.(modals.ExcludeModal)
 	default:
 		switch m.currentView {
 		case viewIssueList:
@@ -360,6 +411,10 @@ func (m Model) updateActiveChild(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var updated tea.Model
 			updated, cmd = m.issueDetailView.Update(msg)
 			m.issueDetailView = updated.(views.IssueDetailModel)
+		case viewExcludedList:
+			var updated tea.Model
+			updated, cmd = m.excludedListView.Update(msg)
+			m.excludedListView = updated.(views.ExcludedListModel)
 		}
 	}
 	return m, cmd
@@ -413,6 +468,8 @@ func (m Model) renderContent() string {
 		return m.issueListView.View()
 	case viewIssueDetail:
 		return style.Render(m.issueDetailView.View())
+	case viewExcludedList:
+		return style.Render(m.excludedListView.View())
 	}
 	return style.Render("")
 }
@@ -423,10 +480,12 @@ func (m Model) renderStatusBar() string {
 		hints = []string{"k:key", "u:url", "t:title", "d:desc", "esc:cancel"}
 	} else if m.pendingKey == shared.KeyAI {
 		hints = []string{"s:summary", "esc:cancel"}
+	} else if m.currentView == viewExcludedList {
+		hints = []string{"j/k:navigate", "x:remove", "esc:back", "?:help"}
 	} else if m.currentView == viewIssueList && m.issueListView.IsFocusRight() {
 		hints = []string{"j/k:scroll", "esc:back"}
 		if m.currentIssue != nil {
-			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI")
+			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI", "x:exclude")
 		}
 	} else {
 		hints = []string{"l:list", "?:help", "q:quit"}
@@ -434,7 +493,7 @@ func (m Model) renderStatusBar() string {
 			hints = append(hints, "enter:focus detail")
 		}
 		if m.currentIssue != nil {
-			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI")
+			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI", "x:exclude")
 		}
 	}
 
@@ -466,6 +525,8 @@ func (m Model) renderModal() string {
 		return m.aiModal.View()
 	case modalTransition:
 		return m.transitionModal.View()
+	case modalExclude:
+		return m.excludeModal.View()
 	}
 	return ""
 }
@@ -479,6 +540,7 @@ func (m *Model) updateChildSizes() {
 	contentH := m.height - 2
 	m.issueListView.SetSize(m.width, contentH)
 	m.issueDetailView.SetSize(m.width, contentH)
+	m.excludedListView.SetSize(m.width, contentH)
 }
 
 func (m Model) fetchTransitionsCmd() tea.Cmd {

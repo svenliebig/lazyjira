@@ -33,3 +33,4 @@ This documentation follows the [arc42](https://arc42.org) template for software 
 | [ADR-008](./decisions/ADR-008_chord_key_system.md) | Two-key chord system for sub-actions | Accepted |
 | [ADR-009](./decisions/ADR-009_adf_to_text.md) | Plain-text ADF conversion | Accepted |
 | [ADR-010](./decisions/ADR-010_shared_messages_package.md) | Shared messages package to prevent circular imports | Accepted |
+| [ADR-011](./decisions/ADR-011_client_side_exclusions.md) | Client-side issue exclusions | Accepted |

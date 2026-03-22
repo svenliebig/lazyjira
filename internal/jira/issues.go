@@ -74,11 +74,16 @@ type issueResponse struct {
 }
 
 type issueFieldsResponse struct {
-	Summary     string           `json:"summary"`
-	Description json.RawMessage  `json:"description"`
-	Status      statusResponse   `json:"status"`
-	Assignee    *userResponse    `json:"assignee"`
-	Reporter    *userResponse    `json:"reporter"`
+	Summary     string          `json:"summary"`
+	Description json.RawMessage `json:"description"`
+	Status      statusResponse  `json:"status"`
+	Assignee    *userResponse   `json:"assignee"`
+	Reporter    *userResponse   `json:"reporter"`
+	Parent      *parentResponse `json:"parent"`
+}
+
+type parentResponse struct {
+	Key string `json:"key"`
 }
 
 type statusResponse struct {
@@ -126,6 +131,9 @@ func convertIssue(r issueResponse) Issue {
 			EmailAddress: r.Fields.Reporter.EmailAddress,
 		}
 	}
+	if r.Fields.Parent != nil {
+		issue.Fields.Parent = &IssueParent{Key: r.Fields.Parent.Key}
+	}
 	return issue
 }
 
@@ -134,7 +142,7 @@ func (c *Client) ListAssigned(ctx context.Context) ([]Issue, error) {
 	payload := map[string]interface{}{
 		"jql":        "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC",
 		"maxResults": 50,
-		"fields":     []string{"summary", "description", "status", "assignee", "reporter"},
+		"fields":     []string{"summary", "description", "status", "assignee", "reporter", "parent"},
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {

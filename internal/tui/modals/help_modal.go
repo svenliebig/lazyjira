@@ -42,6 +42,8 @@ func (m HelpModal) View() string {
 		{"y → t", "Copy issue title"},
 		{"y → d", "Copy issue description"},
 		{"t", "Show transitions for issue"},
+		{"x", "Exclude issue (when issue selected)"},
+		{"x", "Remove exclusion (in excluded list)"},
 		{"a", "AI assistance sub-menu"},
 		{"a → s", "Generate AI summary"},
 		{"↑/k", "Move up"},

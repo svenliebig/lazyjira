@@ -34,3 +34,9 @@ type CopyActionMsg struct{ Action string }
 
 // Close modal
 type CloseModalMsg struct{}
+
+// Exclusions
+type ExcludeActionMsg struct {
+	Type  string // "key" or "parent"
+	Value string // issue key or parent key
+}

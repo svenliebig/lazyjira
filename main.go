@@ -8,6 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/svenliebig/jira-cli/internal/config"
+	"github.com/svenliebig/jira-cli/internal/exclusions"
 	"github.com/svenliebig/jira-cli/internal/jira"
 	"github.com/svenliebig/jira-cli/internal/tui"
 )
@@ -30,7 +31,12 @@ func main() {
 		jiraClient = jira.NewClient(cfg.JiraCloudURL, cfg.JiraEmail, cfg.JiraAPIToken)
 	}
 
-	model := tui.New(cfg, jiraClient)
+	store, err := exclusions.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not load exclusions: %v\n", err)
+	}
+
+	model := tui.New(cfg, jiraClient, store)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)

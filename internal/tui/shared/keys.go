@@ -17,4 +17,5 @@ const (
 	KeyEnter      = "enter"
 	KeyEsc        = "esc"
 	KeyQuit       = "q"
+	KeyExclude    = "x"
 )

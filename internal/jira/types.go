@@ -12,6 +12,11 @@ type IssueFields struct {
 	Status      IssueStatus
 	Assignee    *User
 	Reporter    *User
+	Parent      *IssueParent
+}
+
+type IssueParent struct {
+	Key string
 }
 
 type IssueStatus struct {

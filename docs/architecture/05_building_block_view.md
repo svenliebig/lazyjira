@@ -3,15 +3,15 @@
 ## Level 1 — Top-level Packages
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                          jira-cli                               │
-│                                                                 │
-│  ┌──────────┐   ┌──────────┐   ┌────────┐   ┌───────────────┐ │
-│  │  config  │   │   jira   │   │  tui   │   │  integrations │ │
-│  └──────────┘   └──────────┘   └────────┘   └───────────────┘ │
-│                                                                 │
-│  main.go — composition root                                     │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                             jira-cli                                  │
+│                                                                       │
+│  ┌──────────┐  ┌────────────┐  ┌──────────┐  ┌────────┐  ┌────────┐ │
+│  │  config  │  │ exclusions │  │   jira   │  │  tui   │  │ integr │ │
+│  └──────────┘  └────────────┘  └──────────┘  └────────┘  └────────┘ │
+│                                                                       │
+│  main.go — composition root                                           │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ### main.go — Composition Root
@@ -21,6 +21,10 @@ Parses CLI flags, loads config, constructs a `jira.Client` if credentials are av
 ### internal/config
 
 Responsible for the full credential resolution chain: config file → environment variables → CLI flags (each level overrides the previous). Owns the JSON schema for `~/.config/jira-cli/config.json` and the `IsComplete()` check.
+
+### internal/exclusions
+
+Manages the user's personal list of exclusion rules. Persists `[]Rule` as JSON to `~/.config/jira-cli/exclusions.json`. Exposes `Add`, `Remove`, `Rules`, and `Filter` — the last of which removes matching issues from a `[]jira.Issue` slice in memory. Has no knowledge of the TUI or the Jira API beyond the domain types it filters.
 
 ### internal/jira
 
@@ -78,6 +82,7 @@ The root model holds the complete application state and routes every message to 
 **Responsibilities:**
 - Owns `viewState` and `modalState` enums and their transitions
 - Tracks `currentIssue` (the issue all actions operate on)
+- Tracks `allIssues` (raw API results) separately from the filtered display list
 - Dispatches keyboard input: modal-first, then chord resolution, then global keys, then active view
 - Fires async commands (`tea.Cmd`) for all I/O operations
 - Renders header, content area, status bar, and modal overlay
@@ -96,6 +101,7 @@ Each view implements `Init() tea.Cmd`, `Update(tea.Msg) (tea.Model, tea.Cmd)`, a
 | `HomeModel` | Static welcome screen. No state. |
 | `IssueListModel` | Split-panel view. Manages a `bubbles/list` on the left and a `bubbles/viewport` on the right. Tracks `focusRight bool` to route keyboard input. Exposes `CurrentIssue()`, `IsFocusRight()`, `BlurRight()` for root model coordination. |
 | `IssueDetailModel` | Full-screen scrollable viewport for a single issue. Retained for potential direct navigation; currently reached only programmatically. |
+| `ExcludedListModel` | Full-width list of active exclusion rules. Each item shows the rule type (`key` or `parent`) and value. Exposes `CurrentRule()` so the root model can pass the highlighted rule to `exclusions.Store.Remove()`. |
 
 ### Modals
 
@@ -109,6 +115,7 @@ Each modal emits one of the message types in `shared/messages.go` when closed or
 | `CopyModal` | `CopyActionMsg{Action}` or `CloseModalMsg` |
 | `TransitionModal` | `TransitionSelectedMsg{ID}` or `CloseModalMsg` |
 | `AIModal` | Internally handles `AICommitsLoadedMsg`, `AISummaryMsg`; emits `CloseModalMsg` on close |
+| `ExcludeModal` | `ExcludeActionMsg{Type, Value}` or `CloseModalMsg`. The `p` (parent) option is visually strikethrough and non-functional when the current issue has no parent. |
 
 ---
 
@@ -174,21 +181,25 @@ AIModal
 ```
 main
  └─► config
+ └─► exclusions
+ │    └─► jira (types only)
  └─► jira
  └─► tui/app
       └─► tui/shared
       └─► tui/views
       │    └─► tui/shared
       │    └─► jira (types only)
+      │    └─► exclusions
       └─► tui/modals
       │    └─► tui/shared
       │    └─► jira (types only)
       │    └─► git
       │    └─► ollama
       └─► config
+      └─► exclusions
       └─► jira
       └─► clipboard
       └─► browser
 ```
 
-No circular dependencies. `tui/shared` is the only package imported by both `tui/views` and `tui/modals`, and it imports nothing from the `tui` tree itself.
+No circular dependencies. `tui/shared` is the only package imported by both `tui/views` and `tui/modals`, and it imports nothing from the `tui` tree itself. `exclusions` is a leaf-adjacent package — it imports only `jira` (for the `Issue` type) and standard library packages.

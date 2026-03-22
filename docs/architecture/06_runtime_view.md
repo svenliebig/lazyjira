@@ -12,7 +12,10 @@ main()
   │
   ├─ jiraClient = nil
   │
-  └─ tui.New(cfg, nil)
+  ├─ exclusions.Load()
+  │   └─ reads ~/.config/jira-cli/exclusions.json → not found, returns empty Store
+  │
+  └─ tui.New(cfg, nil, store)
        └─ cfg incomplete → activeModal = modalAuth
        └─ tea.NewProgram(model, tea.WithAltScreen()).Run()
             │
@@ -54,9 +57,11 @@ fetchAssignedCmd executes:
        └─ return IssueListLoadedMsg{Issues: [...]}
 
 Root model receives IssueListLoadedMsg
-  ├─ issueListView = NewIssueListModel(issues, width, height-2)
+  ├─ allIssues = msg.Issues                              ← raw, unfiltered
+  ├─ filtered = exclusions.Filter(allIssues)             ← apply local rules
+  ├─ issueListView = NewIssueListModel(filtered, width, height-2)
   ├─ currentView = viewIssueList
-  ├─ currentIssue = issueListView.CurrentIssue()   ← first issue in list
+  ├─ currentIssue = issueListView.CurrentIssue()         ← first visible issue
   └─ loading = false → split-panel rendered
 ```
 
@@ -208,4 +213,75 @@ Root model receives CopyActionMsg{Action: "key"}
   └─ activeModal = modalNone
   └─ pendingKey = ""
   └─ statusMsg = "Copied!"
+```
+
+---
+
+## Scenario 7 — Excluding an Issue
+
+```
+User presses "x" (currentIssue = PROJ-42, viewIssueList)
+  └─ handleKey("x")
+       └─ currentView != viewExcludedList, currentIssue != nil
+       └─ excludeModal = NewExcludeModal(currentIssue)
+       └─ activeModal = modalExclude
+
+excludeModal renders:
+  "p  Exclude all by parent issue (PROJ-10)"   ← if parent exists
+  "k  Exclude by issue key (PROJ-42)"
+
+  — or, if no parent —
+
+  "p  ~~Exclude all by parent issue (no parent)~~"  ← strikethrough, non-interactive
+  "k  Exclude by issue key (PROJ-42)"
+
+User presses "k"
+  └─ excludeModal.Update(KeyMsg{"k"})
+       └─ return ExcludeActionMsg{Type: "key", Value: "PROJ-42"}
+
+Root model receives ExcludeActionMsg{Type: "key", Value: "PROJ-42"}
+  ├─ exclusions.Add(Rule{Type: "key", Value: "PROJ-42"})
+  │   └─ appends to rules, writes ~/.config/jira-cli/exclusions.json
+  ├─ filtered = exclusions.Filter(allIssues)    ← PROJ-42 now absent
+  ├─ issueListView = NewIssueListModel(filtered, ...)
+  ├─ currentIssue = issueListView.CurrentIssue()
+  ├─ activeModal = modalNone
+  └─ statusMsg = "Issue excluded"
+```
+
+Note: `allIssues` is not modified. The filtered slice is recomputed from the unchanged raw data on every exclusion change. No network request is needed.
+
+---
+
+## Scenario 8 — Viewing and Removing Exclusions
+
+```
+User presses "l"
+  └─ activeModal = modalListSelector
+
+listSelectorModal renders:
+  "a  Assigned Issues"
+  "x  Excluded Issues"
+
+User presses "x"
+  └─ listSelectorModal.Update(KeyMsg{"x"})
+       └─ return ListSelectedMsg{Type: "excluded"}
+
+Root model receives ListSelectedMsg{Type: "excluded"}
+  ├─ excludedListView = NewExcludedListModel(exclusions.Rules(), width, height-2)
+  ├─ currentView = viewExcludedList
+  └─ currentIssue = nil
+
+excludedListView renders:
+  "PROJ-42          Excluded by issue key"
+  "Parent: PROJ-10  All issues with this parent are excluded"
+
+User navigates to "PROJ-42" row and presses "x"
+  └─ handleKey("x")
+       └─ currentView == viewExcludedList
+       └─ rule = excludedListView.CurrentRule() → Rule{Type:"key", Value:"PROJ-42"}
+       └─ exclusions.Remove(rule)
+       │   └─ removes from rules, writes ~/.config/jira-cli/exclusions.json
+       └─ excludedListView = NewExcludedListModel(exclusions.Rules(), ...)
+       └─ statusMsg = "Exclusion removed"
 ```
