@@ -101,8 +101,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case shared.IssueListLoadedMsg:
 		m.loading = false
-		m.issueListView = views.NewIssueListModel(msg.Issues, m.width, m.height-4)
+		m.issueListView = views.NewIssueListModel(msg.Issues, m.width, m.height-2)
 		m.currentView = viewIssueList
+		m.currentIssue = m.issueListView.CurrentIssue()
 		return m, nil
 
 	case shared.IssueSelectedMsg:
@@ -220,13 +221,18 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.pendingKey = ""
 			return m, nil
 		}
+		if m.currentView == viewIssueList && m.issueListView.IsFocusRight() {
+			m.issueListView = m.issueListView.BlurRight()
+			return m, nil
+		}
 		if m.currentView == viewIssueDetail {
 			m.currentView = viewIssueList
-			m.currentIssue = nil
+			m.currentIssue = m.issueListView.CurrentIssue()
 			return m, nil
 		}
 		if m.currentView == viewIssueList {
 			m.currentView = viewHome
+			m.currentIssue = nil
 			return m, nil
 		}
 		return m, nil
@@ -349,6 +355,7 @@ func (m Model) updateActiveChild(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var updated tea.Model
 			updated, cmd = m.issueListView.Update(msg)
 			m.issueListView = updated.(views.IssueListModel)
+			m.currentIssue = m.issueListView.CurrentIssue()
 		case viewIssueDetail:
 			var updated tea.Model
 			updated, cmd = m.issueDetailView.Update(msg)
@@ -402,7 +409,8 @@ func (m Model) renderContent() string {
 	case viewHome:
 		return style.Render(m.homeView.View())
 	case viewIssueList:
-		return style.Render(m.issueListView.View())
+		// The split view manages its own layout — no extra wrapping
+		return m.issueListView.View()
 	case viewIssueDetail:
 		return style.Render(m.issueDetailView.View())
 	}
@@ -415,8 +423,16 @@ func (m Model) renderStatusBar() string {
 		hints = []string{"k:key", "u:url", "t:title", "d:desc", "esc:cancel"}
 	} else if m.pendingKey == shared.KeyAI {
 		hints = []string{"s:summary", "esc:cancel"}
+	} else if m.currentView == viewIssueList && m.issueListView.IsFocusRight() {
+		hints = []string{"j/k:scroll", "esc:back"}
+		if m.currentIssue != nil {
+			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI")
+		}
 	} else {
 		hints = []string{"l:list", "?:help", "q:quit"}
+		if m.currentView == viewIssueList {
+			hints = append(hints, "enter:focus detail")
+		}
 		if m.currentIssue != nil {
 			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI")
 		}

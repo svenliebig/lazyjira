@@ -13,8 +13,12 @@ var (
 	colorSurface   = lipgloss.Color("#374151")
 	colorText      = lipgloss.Color("#F9FAFB")
 	colorSubtext   = lipgloss.Color("#D1D5DB")
-	colorBorder    = lipgloss.Color("#4B5563") //nolint:unused
-	colorFocus     = lipgloss.Color("#7C3AED")
+	colorBorder = lipgloss.Color("#4B5563")
+	colorFocus  = lipgloss.Color("#7C3AED")
+
+	// Exported for use in child packages
+	ColorBorder = colorBorder
+	ColorFocus  = colorFocus
 
 	StyleHeader = lipgloss.NewStyle().
 			Background(colorPrimary).
