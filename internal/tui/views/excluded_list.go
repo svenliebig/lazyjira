@@ -3,8 +3,8 @@ package views
 import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/svenliebig/jira-cli/internal/exclusions"
-	"github.com/svenliebig/jira-cli/internal/tui/shared"
+	"github.com/svenliebig/lazyjira/internal/exclusions"
+	"github.com/svenliebig/lazyjira/internal/tui/shared"
 )
 
 // exclusionItem wraps an exclusions.Rule to implement list.Item.

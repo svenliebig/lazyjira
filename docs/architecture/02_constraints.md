@@ -15,7 +15,7 @@
 
 | ID | Constraint | Rationale |
 |----|-----------|-----------|
-| OC-01 | Config stored in `$XDG_CONFIG_HOME/jira-cli/config.json` | Follows the XDG Base Directory specification for portability and user expectations on Linux/macOS |
+| OC-01 | Config stored in `$XDG_CONFIG_HOME/lazyjira/config.json` | Follows the XDG Base Directory specification for portability and user expectations on Linux/macOS |
 | OC-02 | Credentials must never be logged or printed | API tokens are sensitive; echo mode is used for the token input field |
 | OC-03 | No telemetry or analytics | Privacy-first; no data collection |
 

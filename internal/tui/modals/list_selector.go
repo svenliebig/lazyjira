@@ -2,7 +2,7 @@ package modals
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/svenliebig/jira-cli/internal/tui/shared"
+	"github.com/svenliebig/lazyjira/internal/tui/shared"
 )
 
 // ListSelectorModal lets the user choose what list to display.

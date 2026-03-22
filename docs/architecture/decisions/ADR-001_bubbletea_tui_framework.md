@@ -8,7 +8,7 @@
 
 ## Context
 
-jira-cli is a terminal user interface application. A TUI framework is needed to handle terminal control sequences, keyboard input, layout, and the event loop.
+lazyjira is a terminal user interface application. A TUI framework is needed to handle terminal control sequences, keyboard input, layout, and the event loop.
 
 The inspiration source, lazygit, uses [gocui](https://github.com/jesseduffield/gocui) — a lower-level panel management library. Several modern alternatives exist in the Go ecosystem.
 

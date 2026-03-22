@@ -81,5 +81,5 @@ func configFilePath() (string, error) {
 		}
 		base = filepath.Join(home, ".config")
 	}
-	return filepath.Join(base, "jira-cli", "config.json"), nil
+	return filepath.Join(base, "lazyjira", "config.json"), nil
 }

@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/svenliebig/jira-cli/internal/config"
-	"github.com/svenliebig/jira-cli/internal/exclusions"
+	"github.com/svenliebig/lazyjira/internal/config"
+	"github.com/svenliebig/lazyjira/internal/exclusions"
 )
 
 func TestSmoke_AuthModal(t *testing.T) {

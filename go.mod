@@ -1,4 +1,4 @@
-module github.com/svenliebig/jira-cli
+module github.com/svenliebig/lazyjira
 
 go 1.24.2
 

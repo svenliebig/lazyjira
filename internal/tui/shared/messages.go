@@ -1,6 +1,6 @@
 package shared
 
-import "github.com/svenliebig/jira-cli/internal/jira"
+import "github.com/svenliebig/lazyjira/internal/jira"
 
 // Auth
 type AuthCompletedMsg struct {

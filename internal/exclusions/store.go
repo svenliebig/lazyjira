@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/svenliebig/jira-cli/internal/jira"
+	"github.com/svenliebig/lazyjira/internal/jira"
 )
 
 // Rule represents a single exclusion criterion.
@@ -117,5 +117,5 @@ func storePath() string {
 		home, _ := os.UserHomeDir()
 		base = filepath.Join(home, ".config")
 	}
-	return filepath.Join(base, "jira-cli", "exclusions.json")
+	return filepath.Join(base, "lazyjira", "exclusions.json")
 }

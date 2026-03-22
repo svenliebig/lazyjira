@@ -1,4 +1,4 @@
-# Architecture Documentation — jira-cli
+# Architecture Documentation — lazyjira
 
 This documentation follows the [arc42](https://arc42.org) template for software architecture.
 

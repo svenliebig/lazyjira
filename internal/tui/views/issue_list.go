@@ -8,8 +8,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/svenliebig/jira-cli/internal/jira"
-	"github.com/svenliebig/jira-cli/internal/tui/shared"
+	"github.com/svenliebig/lazyjira/internal/jira"
+	"github.com/svenliebig/lazyjira/internal/tui/shared"
 )
 
 // issueItem wraps a jira.Issue to implement list.Item.

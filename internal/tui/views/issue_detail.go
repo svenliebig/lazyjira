@@ -6,8 +6,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/svenliebig/jira-cli/internal/jira"
-	"github.com/svenliebig/jira-cli/internal/tui/shared"
+	"github.com/svenliebig/lazyjira/internal/jira"
+	"github.com/svenliebig/lazyjira/internal/tui/shared"
 )
 
 // IssueDetailModel shows the detail of a single issue.

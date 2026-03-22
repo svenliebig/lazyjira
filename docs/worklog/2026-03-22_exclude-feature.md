@@ -10,7 +10,7 @@ Implement an exclude feature that lets users hide issues from the list based on 
 
 ### New package: `internal/exclusions`
 - `Rule{Type, Value}` — a single exclusion criterion; `Type` is `"key"` or `"parent"`, `Value` is the relevant issue key
-- `Store` — holds the active rules and persists them to `~/.config/jira-cli/exclusions.json` (same XDG base as config)
+- `Store` — holds the active rules and persists them to `~/.config/lazyjira/exclusions.json` (same XDG base as config)
 - `Add(Rule)` — appends a rule (deduplicates) and saves
 - `Remove(Rule)` — removes a rule and saves
 - `Rules()` — returns a copy of all active rules

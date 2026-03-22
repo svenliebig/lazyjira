@@ -6,14 +6,14 @@
 main()
   │
   ├─ config.Load(flags)
-  │   └─ reads ~/.config/jira-cli/config.json  → not found, returns empty Config
+  │   └─ reads ~/.config/lazyjira/config.json  → not found, returns empty Config
   │
   ├─ cfg.IsComplete() → false  (no credentials)
   │
   ├─ jiraClient = nil
   │
   ├─ exclusions.Load()
-  │   └─ reads ~/.config/jira-cli/exclusions.json → not found, returns empty Store
+  │   └─ reads ~/.config/lazyjira/exclusions.json → not found, returns empty Store
   │
   └─ tui.New(cfg, nil, store)
        └─ cfg incomplete → activeModal = modalAuth
@@ -24,7 +24,7 @@ main()
             └─ authModal rendered as overlay
                  └─ user fills URL, email, token, presses Enter
                       └─ AuthCompletedMsg{URL, Email, Token}
-                           ├─ config.Save(cfg) → ~/.config/jira-cli/config.json
+                           ├─ config.Save(cfg) → ~/.config/lazyjira/config.json
                            ├─ jiraClient = jira.NewClient(url, email, token)
                            └─ activeModal = modalNone → home view shown
 ```
@@ -241,7 +241,7 @@ User presses "k"
 
 Root model receives ExcludeActionMsg{Type: "key", Value: "PROJ-42"}
   ├─ exclusions.Add(Rule{Type: "key", Value: "PROJ-42"})
-  │   └─ appends to rules, writes ~/.config/jira-cli/exclusions.json
+  │   └─ appends to rules, writes ~/.config/lazyjira/exclusions.json
   ├─ filtered = exclusions.Filter(allIssues)    ← PROJ-42 now absent
   ├─ issueListView = NewIssueListModel(filtered, ...)
   ├─ currentIssue = issueListView.CurrentIssue()
@@ -281,7 +281,7 @@ User navigates to "PROJ-42" row and presses "x"
        └─ currentView == viewExcludedList
        └─ rule = excludedListView.CurrentRule() → Rule{Type:"key", Value:"PROJ-42"}
        └─ exclusions.Remove(rule)
-       │   └─ removes from rules, writes ~/.config/jira-cli/exclusions.json
+       │   └─ removes from rules, writes ~/.config/lazyjira/exclusions.json
        └─ excludedListView = NewExcludedListModel(exclusions.Rules(), ...)
        └─ statusMsg = "Exclusion removed"
 ```

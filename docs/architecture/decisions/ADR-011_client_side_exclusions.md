@@ -12,14 +12,14 @@ Users sometimes have issues assigned to them that they do not want to see in the
 
 Options for where to store and apply exclusion rules:
 
-1. **Client-side** — a local file (`~/.config/jira-cli/exclusions.json`) that filters results after fetching from the API
-2. **Jira labels** — add a label (e.g. `jira-cli-excluded`) to the issue in Jira, then exclude it from the JQL query
+1. **Client-side** — a local file (`~/.config/lazyjira/exclusions.json`) that filters results after fetching from the API
+2. **Jira labels** — add a label (e.g. `lazyjira-excluded`) to the issue in Jira, then exclude it from the JQL query
 3. **Jira saved filters** — manage a saved JQL filter in Jira that the user maintains themselves
 4. **Jira custom field** — write a custom field value via the API to mark issues as excluded
 
 ## Decision
 
-Store exclusion rules client-side in `~/.config/jira-cli/exclusions.json`, managed entirely by the CLI. The Jira API is not involved in storing or applying exclusions.
+Store exclusion rules client-side in `~/.config/lazyjira/exclusions.json`, managed entirely by the CLI. The Jira API is not involved in storing or applying exclusions.
 
 Two rule types are supported:
 - `{"type": "key", "value": "PROJ-123"}` — hides a single issue by its key
@@ -54,11 +54,11 @@ The root model stores `allIssues` (the raw API result) separately from the displ
 
 ## Consequences
 
-- Exclusions are machine-local: switching to a new machine or deleting `~/.config/jira-cli/` loses them
+- Exclusions are machine-local: switching to a new machine or deleting `~/.config/lazyjira/` loses them
 - Exclusions are not synced across devices or team members
 - If an excluded issue's key is renamed in Jira (rare but possible), the rule becomes stale silently — the issue will reappear in the list
 - Parent exclusion is by parent key at fetch time; if an issue is re-parented in Jira, it may reappear or disappear after the next fetch
-- `internal/exclusions` is a new persistence package alongside `internal/config`; both write to `~/.config/jira-cli/` with `0600` permissions
+- `internal/exclusions` is a new persistence package alongside `internal/config`; both write to `~/.config/lazyjira/` with `0600` permissions
 
 ## Implementation
 

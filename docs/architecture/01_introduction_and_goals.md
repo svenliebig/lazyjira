@@ -1,8 +1,8 @@
 # 1. Introduction and Goals
 
-## What is jira-cli?
+## What is lazyjira?
 
-jira-cli is a terminal user interface (TUI) tool for minimal, focused interaction with Jira Cloud. It aims to give developers fast access to their Jira workflow without leaving the terminal or navigating a web browser.
+lazyjira is a terminal user interface (TUI) tool for minimal, focused interaction with Jira Cloud. It aims to give developers fast access to their Jira workflow without leaving the terminal or navigating a web browser.
 
 The tool is inspired by [lazygit](https://github.com/jesseduffield/lazygit) in look, feel, and interaction model: a full-screen TUI with keyboard-driven navigation, context-aware action menus, and a split-panel layout.
 

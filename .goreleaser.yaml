@@ -1,0 +1,58 @@
+project_name: lazyjira
+
+before:
+  hooks:
+    - go mod tidy
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+
+builds:
+  - id: lazyjira
+    main: .
+    binary: lazyjira
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - 386
+      - arm
+    goarm:
+      - 6
+      - 7
+    ignore:
+      - goos: darwin
+        goarch: 386
+      - goos: darwin
+        goarch: arm
+      - goos: windows
+        goarch: arm
+
+changelog:
+  use: git
+  sort: asc
+  groups:
+    - title: Features
+      regexp: "^feat(\\(.+\\))?:"
+    - title: Fixes
+      regexp: "^fix(\\(.+\\))?:"
+    - title: Chore
+      regexp: "^(chore|build|ci|docs|refactor|test)(\\(.+\\))?:"
+  filters:
+    exclude:
+      - "^Merge"
+
+release:
+  footer: ""

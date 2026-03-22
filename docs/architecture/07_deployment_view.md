@@ -2,14 +2,14 @@
 
 ## Infrastructure
 
-jira-cli is a single compiled binary with no runtime dependencies. It runs entirely on the developer's local machine.
+lazyjira is a single compiled binary with no runtime dependencies. It runs entirely on the developer's local machine.
 
 ```
 Developer's Workstation
 │
-├── jira-cli binary          (anywhere in PATH, e.g. /usr/local/bin/jira-cli)
+├── lazyjira binary          (anywhere in PATH, e.g. /usr/local/bin/lazyjira)
 │
-├── ~/.config/jira-cli/
+├── ~/.config/lazyjira/
 │   └── config.json          (mode 0600 — user read/write only)
 │       {
 │         "jiraCloudUrl":  "https://company.atlassian.net",
@@ -22,14 +22,25 @@ Developer's Workstation
 └── Git                      (any version — required only for AI features)
 ```
 
+## Release Pipeline
+
+Releases are automated via GitHub Actions using a two-stage pipeline:
+
+1. **Release Please** (`release-please.yml`) — monitors `main` for conventional commits (`feat:`, `fix:`, etc.), maintains a release PR with an auto-generated `CHANGELOG.md`, and bumps the version in `.release-please-manifest.json` when merged.
+2. **GoReleaser** — triggered automatically when Release Please merges a release PR. Builds multi-platform binaries and attaches them to the GitHub release.
+
+Versioning follows [Semantic Versioning](https://semver.org/). The version is injected into the binary at build time via `ldflags` (`-X main.version=<tag>`).
+
 ## Installation
 
-No installer. The binary is placed in `$PATH` manually or via a package manager. No shared libraries, no runtime packages, no dynamic linking.
+Pre-built binaries are available on the [GitHub Releases page](https://github.com/svenliebig/lazyjira/releases). Download the archive for your platform and place the binary in `$PATH`.
+
+Alternatively, install from source:
 
 ```
-go install github.com/svenliebig/jira-cli@latest
+go install github.com/svenliebig/lazyjira@latest
 # — or —
-go build -o jira-cli . && mv jira-cli /usr/local/bin/
+go build -o lazyjira . && mv lazyjira /usr/local/bin/
 ```
 
 ## Configuration File Location
@@ -37,12 +48,12 @@ go build -o jira-cli . && mv jira-cli /usr/local/bin/
 The config path follows the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html):
 
 ```
-$XDG_CONFIG_HOME/jira-cli/config.json
+$XDG_CONFIG_HOME/lazyjira/config.json
 ```
 
 If `XDG_CONFIG_HOME` is not set, defaults to:
 ```
-~/.config/jira-cli/config.json
+~/.config/lazyjira/config.json
 ```
 
 The directory is created with `0700` and the file is written with `0600` permissions. Credentials are never stored in a world-readable location.

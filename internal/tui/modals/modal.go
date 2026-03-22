@@ -1,7 +1,7 @@
 package modals
 
 import (
-	"github.com/svenliebig/jira-cli/internal/tui/shared"
+	"github.com/svenliebig/lazyjira/internal/tui/shared"
 )
 
 // Wrap wraps content in a styled modal box.

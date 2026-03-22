@@ -8,10 +8,10 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/svenliebig/jira-cli/internal/git"
-	"github.com/svenliebig/jira-cli/internal/jira"
-	"github.com/svenliebig/jira-cli/internal/ollama"
-	"github.com/svenliebig/jira-cli/internal/tui/shared"
+	"github.com/svenliebig/lazyjira/internal/git"
+	"github.com/svenliebig/lazyjira/internal/jira"
+	"github.com/svenliebig/lazyjira/internal/ollama"
+	"github.com/svenliebig/lazyjira/internal/tui/shared"
 )
 
 type aiState int

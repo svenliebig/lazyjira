@@ -81,9 +81,9 @@ Quality
 
 **Stimulus:** A user saves their Jira API token via the auth modal.
 
-**Response:** The config file is written to `~/.config/jira-cli/config.json` with mode `0600`. The API token is not logged, printed, or transmitted anywhere other than the Authorization header of Jira API requests.
+**Response:** The config file is written to `~/.config/lazyjira/config.json` with mode `0600`. The API token is not logged, printed, or transmitted anywhere other than the Authorization header of Jira API requests.
 
-**Measure:** `ls -la ~/.config/jira-cli/config.json` shows `-rw-------`. The token field uses `EchoPassword` mode in the TUI input.
+**Measure:** `ls -la ~/.config/lazyjira/config.json` shows `-rw-------`. The token field uses `EchoPassword` mode in the TUI input.
 
 **Satisfied by:** `config.Save()` uses `os.WriteFile(path, data, 0600)`. `textinput.EchoPassword` in `AuthModal`.
 
@@ -91,10 +91,10 @@ Quality
 
 ### QS-06 — Portability: Single Binary
 
-**Stimulus:** A developer wants to install jira-cli on a new machine.
+**Stimulus:** A developer wants to install lazyjira on a new machine.
 
 **Response:** A single binary is copied to a directory in `$PATH`. No additional packages, runtimes, or dependencies are required (beyond OS-level clipboard tools on Linux).
 
-**Measure:** `go build -o jira-cli .` produces a self-contained binary on all target platforms.
+**Measure:** `go build -o lazyjira .` produces a self-contained binary on all target platforms.
 
 **Satisfied by:** Pure Go with no CGo. All dependencies are compiled into the binary by `go build`.

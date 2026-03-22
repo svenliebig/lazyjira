@@ -37,7 +37,7 @@ We can use environment variables to authenticate. We will use the following envi
 
 We can use a configuration file to authenticate. We will use the following configuration file:
 
-- `$XDG_CONFIG_HOME/jira-cli/config.json`
+- `$XDG_CONFIG_HOME/lazyjira/config.json`
 
 ```json
 {

@@ -17,7 +17,7 @@ Call the Jira Cloud REST API v3 directly using Go's standard `net/http` package.
 ## Rationale
 
 **Minimal API surface:**
-jira-cli uses exactly four API endpoints:
+lazyjira uses exactly four API endpoints:
 1. `POST /rest/api/3/search/jql` — list assigned issues
 2. `GET /rest/api/3/issue/{key}` — get single issue
 3. `GET /rest/api/3/issue/{key}/transitions` — get available transitions

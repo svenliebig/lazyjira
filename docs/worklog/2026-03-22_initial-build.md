@@ -2,14 +2,14 @@
 
 ## Goal
 
-Build the jira-cli project from scratch based on the design documentation in `./docs/`, fix all runtime issues encountered during real usage, implement two UX improvements, and produce full arc42 architecture documentation with ADRs.
+Build the lazyjira project from scratch based on the design documentation in `./docs/`, fix all runtime issues encountered during real usage, implement two UX improvements, and produce full arc42 architecture documentation with ADRs.
 
 ---
 
 ## Completed work
 
 ### Project scaffolding
-- Created `go.mod` with module `github.com/svenliebig/jira-cli`, Go 1.24.2
+- Created `go.mod` with module `github.com/svenliebig/lazyjira`, Go 1.24.2
 - Dependencies: `charmbracelet/bubbletea v1.3.10`, `charmbracelet/bubbles v1.0.0`, `charmbracelet/lipgloss v1.1.0`, `atotto/clipboard v0.1.4`
 - Implemented the full package structure:
   - `internal/config` — credential loading with three-level resolution chain

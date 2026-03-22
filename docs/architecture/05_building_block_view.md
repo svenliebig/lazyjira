@@ -4,7 +4,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                             jira-cli                                  │
+│                             lazyjira                                  │
 │                                                                       │
 │  ┌──────────┐  ┌────────────┐  ┌──────────┐  ┌────────┐  ┌────────┐ │
 │  │  config  │  │ exclusions │  │   jira   │  │  tui   │  │ integr │ │
@@ -20,11 +20,11 @@ Parses CLI flags, loads config, constructs a `jira.Client` if credentials are av
 
 ### internal/config
 
-Responsible for the full credential resolution chain: config file → environment variables → CLI flags (each level overrides the previous). Owns the JSON schema for `~/.config/jira-cli/config.json` and the `IsComplete()` check.
+Responsible for the full credential resolution chain: config file → environment variables → CLI flags (each level overrides the previous). Owns the JSON schema for `~/.config/lazyjira/config.json` and the `IsComplete()` check.
 
 ### internal/exclusions
 
-Manages the user's personal list of exclusion rules. Persists `[]Rule` as JSON to `~/.config/jira-cli/exclusions.json`. Exposes `Add`, `Remove`, `Rules`, and `Filter` — the last of which removes matching issues from a `[]jira.Issue` slice in memory. Has no knowledge of the TUI or the Jira API beyond the domain types it filters.
+Manages the user's personal list of exclusion rules. Persists `[]Rule` as JSON to `~/.config/lazyjira/exclusions.json`. Exposes `Add`, `Remove`, `Rules`, and `Filter` — the last of which removes matching issues from a `[]jira.Issue` slice in memory. Has no knowledge of the TUI or the Jira API beyond the domain types it filters.
 
 ### internal/jira
 

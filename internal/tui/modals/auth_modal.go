@@ -3,7 +3,7 @@ package modals
 import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/svenliebig/jira-cli/internal/tui/shared"
+	"github.com/svenliebig/lazyjira/internal/tui/shared"
 )
 
 // AuthModal collects Jira credentials from the user.

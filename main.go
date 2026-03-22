@@ -7,11 +7,13 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/svenliebig/jira-cli/internal/config"
-	"github.com/svenliebig/jira-cli/internal/exclusions"
-	"github.com/svenliebig/jira-cli/internal/jira"
-	"github.com/svenliebig/jira-cli/internal/tui"
+	"github.com/svenliebig/lazyjira/internal/config"
+	"github.com/svenliebig/lazyjira/internal/exclusions"
+	"github.com/svenliebig/lazyjira/internal/jira"
+	"github.com/svenliebig/lazyjira/internal/tui"
 )
+
+var version = "dev"
 
 func main() {
 	var flags config.Flags

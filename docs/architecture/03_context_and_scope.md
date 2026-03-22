@@ -2,14 +2,14 @@
 
 ## Business Context
 
-jira-cli sits between the developer's terminal workflow and external systems. It acts as a thin client for Jira Cloud, with optional integrations to the local git repository and a local AI model.
+lazyjira sits between the developer's terminal workflow and external systems. It acts as a thin client for Jira Cloud, with optional integrations to the local git repository and a local AI model.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                          Developer's Machine                        │
 │                                                                     │
 │   ┌──────────┐    keyboard/     ┌─────────────┐                    │
-│   │Developer │◄────display─────►│  jira-cli   │                    │
+│   │Developer │◄────display─────►│  lazyjira   │                    │
 │   └──────────┘                  └──────┬──────┘                    │
 │                                        │                            │
 │             ┌──────────────────────────┼────────────────┐          │
@@ -43,7 +43,7 @@ jira-cli sits between the developer's terminal workflow and external systems. It
 ## Technical Context
 
 ```
-jira-cli binary
+lazyjira binary
 │
 ├── stdin/stdout/stderr  ──► Terminal emulator (user interaction)
 │
@@ -55,7 +55,7 @@ jira-cli binary
 │
 ├── exec.Command("open") ──► macOS / Linux / Windows browser opener
 │
-└── ~/.config/jira-cli/config.json  ──► Local filesystem
+└── ~/.config/lazyjira/config.json  ──► Local filesystem
 ```
 
 ## Scope Boundaries

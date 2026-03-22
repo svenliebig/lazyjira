@@ -15,7 +15,7 @@ The application needs Jira credentials (URL, email, API token) to function. Thes
 Resolve credentials using a three-level chain where each level overrides the previous:
 
 ```
-1. Config file:    ~/.config/jira-cli/config.json         (lowest priority)
+1. Config file:    ~/.config/lazyjira/config.json         (lowest priority)
 2. Env variables:  JIRA_CLOUD_URL / JIRA_EMAIL / JIRA_API_TOKEN
 3. CLI flags:      --jira-cloud-url / --jira-email / --jira-api-token  (highest priority)
 ```
@@ -37,7 +37,7 @@ Short-lived overrides (e.g., pointing at a test Jira instance) are most convenie
 This is the conventional precedence order in most Unix CLI tools (e.g., git, aws-cli, kubectl). Users familiar with one tool will intuitively understand the order.
 
 **XDG compliance:**
-The config file path follows the XDG Base Directory Specification (`$XDG_CONFIG_HOME/jira-cli/config.json`, defaulting to `~/.config/jira-cli/config.json`). This respects user and system conventions on Linux and macOS.
+The config file path follows the XDG Base Directory Specification (`$XDG_CONFIG_HOME/lazyjira/config.json`, defaulting to `~/.config/lazyjira/config.json`). This respects user and system conventions on Linux and macOS.
 
 ## Implementation
 

@@ -7,14 +7,14 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/svenliebig/jira-cli/internal/browser"
-	"github.com/svenliebig/jira-cli/internal/clipboard"
-	"github.com/svenliebig/jira-cli/internal/config"
-	"github.com/svenliebig/jira-cli/internal/exclusions"
-	"github.com/svenliebig/jira-cli/internal/jira"
-	"github.com/svenliebig/jira-cli/internal/tui/modals"
-	"github.com/svenliebig/jira-cli/internal/tui/shared"
-	"github.com/svenliebig/jira-cli/internal/tui/views"
+	"github.com/svenliebig/lazyjira/internal/browser"
+	"github.com/svenliebig/lazyjira/internal/clipboard"
+	"github.com/svenliebig/lazyjira/internal/config"
+	"github.com/svenliebig/lazyjira/internal/exclusions"
+	"github.com/svenliebig/lazyjira/internal/jira"
+	"github.com/svenliebig/lazyjira/internal/tui/modals"
+	"github.com/svenliebig/lazyjira/internal/tui/shared"
+	"github.com/svenliebig/lazyjira/internal/tui/views"
 )
 
 type viewState int
@@ -439,7 +439,7 @@ func (m Model) View() string {
 }
 
 func (m Model) renderHeader() string {
-	title := "jira-cli"
+	title := "lazyjira"
 	if m.currentIssue != nil {
 		title += "  " + shared.StyleIssueKey.Render(m.currentIssue.Key)
 	}

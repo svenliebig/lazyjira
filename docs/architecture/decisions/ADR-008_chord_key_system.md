@@ -8,7 +8,7 @@
 
 ## Context
 
-Several features in jira-cli require a choice between multiple related sub-actions:
+Several features in lazyjira require a choice between multiple related sub-actions:
 - **Copy**: copy the issue key, URL, title, or description
 - **AI assistance**: generate a work summary (and potentially other AI actions in the future)
 

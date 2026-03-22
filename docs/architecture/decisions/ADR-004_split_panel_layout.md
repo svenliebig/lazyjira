@@ -31,7 +31,7 @@ The user needs at most one keypress (Enter) to shift focus to the detail panel, 
 Because `currentIssue` is always set to the highlighted issue in the list, all action keys (y, o, t, a) work immediately without needing to "enter" the issue first. This was the primary motivation for the split design.
 
 **Familiar pattern:**
-lazygit, which served as the UX inspiration for jira-cli, uses an identical split-panel approach for its commit and branch lists.
+lazygit, which served as the UX inspiration for lazyjira, uses an identical split-panel approach for its commit and branch lists.
 
 ## Implementation
 
