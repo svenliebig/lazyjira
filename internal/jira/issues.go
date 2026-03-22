@@ -131,9 +131,17 @@ func convertIssue(r issueResponse) Issue {
 
 // ListAssigned returns issues assigned to the current user.
 func (c *Client) ListAssigned(ctx context.Context) ([]Issue, error) {
-	req, err := c.newRequest(http.MethodGet,
-		"/rest/api/3/search?jql=assignee%3DcurrentUser()%20ORDER%20BY%20updated%20DESC",
-		nil)
+	payload := map[string]interface{}{
+		"jql":        "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC",
+		"maxResults": 50,
+		"fields":     []string{"summary", "description", "status", "assignee", "reporter"},
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := c.newRequest(http.MethodPost, "/rest/api/3/search/jql", bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}

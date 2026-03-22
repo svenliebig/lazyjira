@@ -10,8 +10,8 @@ import (
 
 func TestListAssigned(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			t.Errorf("Expected GET, got %s", r.Method)
+		if r.Method != http.MethodPost {
+			t.Errorf("Expected POST, got %s", r.Method)
 		}
 		if r.Header.Get("Authorization") != "Basic dGVzdEBleGFtcGxlLmNvbTp0ZXN0LXRva2Vu" {
 			t.Errorf("Expected Basic auth, got %s", r.Header.Get("Authorization"))
