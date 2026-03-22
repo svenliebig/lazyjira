@@ -142,9 +142,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case shared.AuthCompletedMsg:
 		m.cfg.JiraCloudURL = msg.URL
+		m.cfg.JiraEmail = msg.Email
 		m.cfg.JiraAPIToken = msg.Token
 		_ = config.Save(m.cfg)
-		m.jiraClient = jira.NewClient(msg.URL, msg.Token)
+		m.jiraClient = jira.NewClient(msg.URL, msg.Email, msg.Token)
 		m.activeModal = modalNone
 		m.statusMsg = "Authenticated!"
 		return m, nil

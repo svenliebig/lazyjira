@@ -22,6 +22,7 @@ func TestLoad_Empty(t *testing.T) {
 func TestLoad_EnvVars(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("JIRA_CLOUD_URL", "https://mycompany.atlassian.net")
+	t.Setenv("JIRA_EMAIL", "user@mycompany.com")
 	t.Setenv("JIRA_API_TOKEN", "my-secret-token")
 
 	cfg, err := Load(Flags{})
@@ -34,6 +35,9 @@ func TestLoad_EnvVars(t *testing.T) {
 	if cfg.JiraCloudURL != "https://mycompany.atlassian.net" {
 		t.Errorf("Expected JiraCloudURL %q, got %q", "https://mycompany.atlassian.net", cfg.JiraCloudURL)
 	}
+	if cfg.JiraEmail != "user@mycompany.com" {
+		t.Errorf("Expected JiraEmail %q, got %q", "user@mycompany.com", cfg.JiraEmail)
+	}
 	if cfg.JiraAPIToken != "my-secret-token" {
 		t.Errorf("Expected JiraAPIToken %q, got %q", "my-secret-token", cfg.JiraAPIToken)
 	}
@@ -42,10 +46,12 @@ func TestLoad_EnvVars(t *testing.T) {
 func TestLoad_FlagOverridesEnv(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("JIRA_CLOUD_URL", "https://env.atlassian.net")
+	t.Setenv("JIRA_EMAIL", "env@example.com")
 	t.Setenv("JIRA_API_TOKEN", "env-token")
 
 	flags := Flags{
 		JiraCloudURL: "https://flag.atlassian.net",
+		JiraEmail:    "flag@example.com",
 		JiraAPIToken: "flag-token",
 	}
 

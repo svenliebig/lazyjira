@@ -13,8 +13,8 @@ func TestListAssigned(t *testing.T) {
 		if r.Method != http.MethodGet {
 			t.Errorf("Expected GET, got %s", r.Method)
 		}
-		if r.Header.Get("Authorization") != "Bearer test-token" {
-			t.Errorf("Expected Bearer auth, got %s", r.Header.Get("Authorization"))
+		if r.Header.Get("Authorization") != "Basic dGVzdEBleGFtcGxlLmNvbTp0ZXN0LXRva2Vu" {
+			t.Errorf("Expected Basic auth, got %s", r.Header.Get("Authorization"))
 		}
 
 		resp := searchResponse{
@@ -39,7 +39,7 @@ func TestListAssigned(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "test-token")
+	client := NewClient(server.URL, "test@example.com", "test-token")
 	issues, err := client.ListAssigned(context.Background())
 	if err != nil {
 		t.Fatalf("ListAssigned() returned error: %v", err)
@@ -102,7 +102,7 @@ func TestGetTransitions(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "test-token")
+	client := NewClient(server.URL, "test@example.com", "test-token")
 	transitions, err := client.GetTransitions(context.Background(), "PROJ-1")
 	if err != nil {
 		t.Fatalf("GetTransitions() returned error: %v", err)
@@ -130,7 +130,7 @@ func TestListAssigned_EmptyResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "test-token")
+	client := NewClient(server.URL, "test@example.com", "test-token")
 	issues, err := client.ListAssigned(context.Background())
 	if err != nil {
 		t.Fatalf("ListAssigned() returned error: %v", err)
@@ -156,7 +156,7 @@ func TestGetIssue(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "test-token")
+	client := NewClient(server.URL, "test@example.com", "test-token")
 	issue, err := client.GetIssue(context.Background(), "PROJ-2")
 	if err != nil {
 		t.Fatalf("GetIssue() returned error: %v", err)

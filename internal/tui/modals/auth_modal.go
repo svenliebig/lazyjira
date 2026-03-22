@@ -20,15 +20,20 @@ func NewAuthModal() AuthModal {
 	urlInput.CharLimit = 256
 	urlInput.Width = 50
 
+	emailInput := textinput.New()
+	emailInput.Placeholder = "you@example.com"
+	emailInput.CharLimit = 256
+	emailInput.Width = 50
+
 	tokenInput := textinput.New()
 	tokenInput.Placeholder = "your-api-token"
-	tokenInput.CharLimit = 256
+	tokenInput.CharLimit = 512
 	tokenInput.Width = 50
 	tokenInput.EchoMode = textinput.EchoPassword
 	tokenInput.EchoCharacter = '•'
 
 	return AuthModal{
-		inputs:  []textinput.Model{urlInput, tokenInput},
+		inputs:  []textinput.Model{urlInput, emailInput, tokenInput},
 		focused: 0,
 	}
 }
@@ -72,13 +77,14 @@ func (m AuthModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			// Last field — submit
 			url := m.inputs[0].Value()
-			token := m.inputs[1].Value()
-			if url == "" || token == "" {
-				m.err = "Both URL and API token are required"
+			email := m.inputs[1].Value()
+			token := m.inputs[2].Value()
+			if url == "" || email == "" || token == "" {
+				m.err = "All fields are required"
 				return m, nil
 			}
 			return m, func() tea.Msg {
-				return shared.AuthCompletedMsg{URL: url, Token: token}
+				return shared.AuthCompletedMsg{URL: url, Email: email, Token: token}
 			}
 		}
 	}
@@ -95,8 +101,10 @@ func (m AuthModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m AuthModal) View() string {
 	content := shared.StyleMuted.Render("Jira Cloud URL:") + "\n" +
 		m.inputs[0].View() + "\n\n" +
-		shared.StyleMuted.Render("API Token:") + "\n" +
+		shared.StyleMuted.Render("Email:") + "\n" +
 		m.inputs[1].View() + "\n\n" +
+		shared.StyleMuted.Render("API Token:") + "\n" +
+		m.inputs[2].View() + "\n\n" +
 		shared.StyleMuted.Render("tab: next field  enter: confirm  esc: cancel")
 
 	if m.err != "" {

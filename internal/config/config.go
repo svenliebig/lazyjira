@@ -8,11 +8,13 @@ import (
 
 type Config struct {
 	JiraCloudURL string `json:"jiraCloudUrl"`
+	JiraEmail    string `json:"jiraEmail"`
 	JiraAPIToken string `json:"jiraApiToken"`
 }
 
 type Flags struct {
 	JiraCloudURL string
+	JiraEmail    string
 	JiraAPIToken string
 }
 
@@ -30,6 +32,9 @@ func Load(flags Flags) (*Config, error) {
 	if v := os.Getenv("JIRA_CLOUD_URL"); v != "" {
 		cfg.JiraCloudURL = v
 	}
+	if v := os.Getenv("JIRA_EMAIL"); v != "" {
+		cfg.JiraEmail = v
+	}
 	if v := os.Getenv("JIRA_API_TOKEN"); v != "" {
 		cfg.JiraAPIToken = v
 	}
@@ -37,6 +42,9 @@ func Load(flags Flags) (*Config, error) {
 	// 3. CLI flags (highest priority)
 	if flags.JiraCloudURL != "" {
 		cfg.JiraCloudURL = flags.JiraCloudURL
+	}
+	if flags.JiraEmail != "" {
+		cfg.JiraEmail = flags.JiraEmail
 	}
 	if flags.JiraAPIToken != "" {
 		cfg.JiraAPIToken = flags.JiraAPIToken
@@ -46,7 +54,7 @@ func Load(flags Flags) (*Config, error) {
 }
 
 func (c *Config) IsComplete() bool {
-	return c.JiraCloudURL != "" && c.JiraAPIToken != ""
+	return c.JiraCloudURL != "" && c.JiraEmail != "" && c.JiraAPIToken != ""
 }
 
 func Save(cfg *Config) error {

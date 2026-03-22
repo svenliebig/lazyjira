@@ -15,6 +15,7 @@ import (
 func main() {
 	var flags config.Flags
 	flag.StringVar(&flags.JiraCloudURL, "jira-cloud-url", "", "Jira Cloud URL")
+	flag.StringVar(&flags.JiraEmail, "jira-email", "", "Jira account email")
 	flag.StringVar(&flags.JiraAPIToken, "jira-api-token", "", "Jira API Token")
 	flag.Parse()
 
@@ -26,7 +27,7 @@ func main() {
 
 	var jiraClient *jira.Client
 	if cfg.IsComplete() {
-		jiraClient = jira.NewClient(cfg.JiraCloudURL, cfg.JiraAPIToken)
+		jiraClient = jira.NewClient(cfg.JiraCloudURL, cfg.JiraEmail, cfg.JiraAPIToken)
 	}
 
 	model := tui.New(cfg, jiraClient)

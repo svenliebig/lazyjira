@@ -5,6 +5,7 @@ import "github.com/svenliebig/jira-cli/internal/jira"
 // Auth
 type AuthCompletedMsg struct {
 	URL   string
+	Email string
 	Token string
 }
 
