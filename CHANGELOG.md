@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/svenliebig/lazyjira/compare/v1.0.1...v1.1.0) (2026-03-23)
+
+
+### Features
+
+* add arrow and vim keys navigation to modals ([9581a8f](https://github.com/svenliebig/lazyjira/commit/9581a8faf9f65e391b6d53bceadaeef6cb5d08da))
+
 ## [1.0.1](https://github.com/svenliebig/lazyjira/compare/v1.0.0...v1.0.1) (2026-03-23)
 
 
