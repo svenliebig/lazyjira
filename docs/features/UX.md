@@ -9,3 +9,16 @@ The `esc` key will always return the user to the previous screen or close the cu
 When pressing `?` the user will see an overview of the possible actions and their shortcuts.
 
 Navigation in the tool is through the arrow keys or the vim-like navigation keys `h`, `j`, `k` and `l`.
+
+## Action modal navigation
+
+All action-selection modals (copy, transition, list selector, exclude) support cursor navigation:
+
+| Key | Action |
+|-----|--------|
+| `j` / `↓` | Move cursor down |
+| `k` / `↑` | Move cursor up |
+| `enter` / `l` | Confirm highlighted selection |
+| `h` / `esc` | Cancel / close modal |
+
+The currently highlighted option is shown with a `>` prefix in bold purple. Direct shortcut keys (e.g., `u` for copy URL, `1`–`9` for transitions) remain available as single-keystroke aliases where they do not conflict with the navigation keys. No action shortcut inside a modal may use `h`, `j`, `k`, or `l`.

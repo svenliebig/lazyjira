@@ -478,7 +478,7 @@ func (m Model) renderContent() string {
 func (m Model) renderStatusBar() string {
 	var hints []string
 	if m.pendingKey == shared.KeyCopy {
-		hints = []string{"k:key", "u:url", "t:title", "d:desc", "esc:cancel"}
+		hints = []string{"↑/k↓/j:navigate", "enter/l:select", "u:url", "t:title", "d:desc", "h/esc:cancel"}
 	} else if m.pendingKey == shared.KeyAI {
 		hints = []string{"s:summary", "esc:cancel"}
 	} else if m.currentView == viewExcludedList {

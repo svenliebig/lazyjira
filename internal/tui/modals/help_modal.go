@@ -37,7 +37,7 @@ func (m HelpModal) View() string {
 		{"esc", "Go back / close modal"},
 		{"o", "Open issue in browser"},
 		{"y", "Copy sub-menu (when issue selected)"},
-		{"y → k", "Copy issue key"},
+		{"y → i", "Copy issue key"},
 		{"y → u", "Copy issue URL"},
 		{"y → t", "Copy issue title"},
 		{"y → d", "Copy issue description"},
@@ -48,7 +48,8 @@ func (m HelpModal) View() string {
 		{"a → s", "Generate AI summary"},
 		{"↑/k", "Move up"},
 		{"↓/j", "Move down"},
-		{"enter", "Select item"},
+		{"enter/l", "Select item"},
+		{"h", "Cancel / close modal (in action modals)"},
 	}
 
 	var sb strings.Builder

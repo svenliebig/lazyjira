@@ -71,3 +71,9 @@ The copy modal (`CopyModal`) and AI modal (`AIModal`) provide the visual represe
 - The status bar must always reflect the current `pendingKey` state so the user knows a chord is "open"
 - Adding new chord families requires only adding a new `pendingKey` case in `handleKey()` and a matching modal
 - First keys (`y`, `a`) cannot be used as standalone actions — they are exclusively chord initiators
+
+## Amendment — 2026-03-23: cursor navigation added to modals
+
+All action-selection modals gained cursor navigation (`j`/`↓` down, `k`/`↑` up, `enter`/`l` confirm, `h`/`esc` cancel) as a complement to the existing shortcut keys. This makes the "Arrow-navigated menu" pattern available inside modals without removing the faster chord shortcuts.
+
+The constraint introduced is that **no action shortcut inside a modal may use `h`, `j`, `k`, or `l`**, since those keys are now reserved for modal-internal navigation. Affected shortcuts were remapped: `k` (copy issue key, exclude by key) became `i` in both modals.

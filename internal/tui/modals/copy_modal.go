@@ -6,7 +6,20 @@ import (
 )
 
 // CopyModal shows copy options for the current issue.
-type CopyModal struct{}
+type CopyModal struct {
+	cursor int
+}
+
+var copyItems = []struct {
+	shortcut string
+	label    string
+	action   string
+}{
+	{"i", "Copy issue key", "key"},
+	{"u", "Copy issue URL", "url"},
+	{"t", "Copy issue title", "title"},
+	{"d", "Copy description", "desc"},
+}
 
 func NewCopyModal() CopyModal {
 	return CopyModal{}
@@ -20,9 +33,22 @@ func (m CopyModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc":
+		case "esc", "h":
 			return m, func() tea.Msg { return shared.CloseModalMsg{} }
-		case "k":
+		case "up", "k":
+			if m.cursor > 0 {
+				m.cursor--
+			}
+			return m, nil
+		case "down", "j":
+			if m.cursor < len(copyItems)-1 {
+				m.cursor++
+			}
+			return m, nil
+		case "enter", "l":
+			action := copyItems[m.cursor].action
+			return m, func() tea.Msg { return shared.CopyActionMsg{Action: action} }
+		case "i":
 			return m, func() tea.Msg { return shared.CopyActionMsg{Action: "key"} }
 		case "u":
 			return m, func() tea.Msg { return shared.CopyActionMsg{Action: "url"} }
@@ -36,15 +62,18 @@ func (m CopyModal) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m CopyModal) View() string {
-	row := func(key, label string) string {
-		return "  " + shared.StyleKeyHint.Render(key) + "  " + shared.StyleNormalItem.Render(label) + "\n"
+	var content string
+	for i, item := range copyItems {
+		prefix := "  "
+		labelStyle := shared.StyleNormalItem
+		if i == m.cursor {
+			prefix = shared.StyleSelectedItem.Render(">") + " "
+			labelStyle = shared.StyleSelectedItem
+		}
+		keyPart := shared.StyleKeyHint.Render(item.shortcut) + "  "
+		content += prefix + keyPart + labelStyle.Render(item.label) + "\n"
 	}
-
-	content := row("k", "Copy issue key") +
-		row("u", "Copy issue URL") +
-		row("t", "Copy issue title") +
-		row("d", "Copy description") +
-		"\n" + shared.StyleMuted.Render("  esc: cancel")
+	content += "\n" + shared.StyleMuted.Render("  ↑/k  ↓/j: navigate   enter/l: select   h/esc: cancel")
 
 	return Wrap("Copy", content)
 }
