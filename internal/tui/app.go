@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/x/ansi"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/svenliebig/lazyjira/internal/browser"
@@ -508,7 +509,13 @@ func (m Model) renderStatusBar() string {
 		parts = append(parts, "  "+shared.StyleSuccess.Render(m.statusMsg))
 	}
 
-	return shared.StyleStatusBar.Width(m.width).Render(strings.Join(parts, ""))
+	content := strings.Join(parts, "")
+	// Truncate to content area width (m.width minus padding) to prevent wrapping to a second line,
+	// which would push the total rendered height over the terminal height and scroll the header off.
+	if m.width > 2 {
+		content = ansi.Truncate(content, m.width-2, "")
+	}
+	return shared.StyleStatusBar.Width(m.width).Render(content)
 }
 
 func (m Model) renderModal() string {

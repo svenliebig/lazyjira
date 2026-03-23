@@ -184,7 +184,7 @@ func (m IssueListModel) View() string {
 		detailContent = shared.StyleMuted.Render("No issue selected")
 	}
 	rightPane := lipgloss.NewStyle().
-		Width(rightW - 2).
+		Width(rightW).
 		Height(m.height).
 		Padding(0, 1).
 		Render(detailContent)
