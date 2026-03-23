@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/svenliebig/lazyjira/compare/v1.0.0...v1.0.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* application does not jump anymore on scrolling through the tickets ([be27afb](https://github.com/svenliebig/lazyjira/commit/be27afbeb7df7f82e84743351ca2f64aefc8270b))
+
 ## 1.0.0 (2026-03-22)
 
 
