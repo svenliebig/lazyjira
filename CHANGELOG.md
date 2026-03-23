@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/svenliebig/lazyjira/compare/v1.2.0...v1.3.0) (2026-03-23)
+
+
+### Features
+
+* add settings and theme feature ([13bbbdf](https://github.com/svenliebig/lazyjira/commit/13bbbdf7d912793bf47db2e302fcdb6c55e83e4b))
+
 ## [1.2.0](https://github.com/svenliebig/lazyjira/compare/v1.1.0...v1.2.0) (2026-03-23)
 
 
