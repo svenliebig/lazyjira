@@ -54,5 +54,17 @@ changelog:
     exclude:
       - "^Merge"
 
+brews:
+  - name: lazyjira
+    repository:
+      owner: svenliebig
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/svenliebig/lazyjira"
+    description: "A minimal Jira CLI for the terminal inspired by lazygit"
+    license: "MIT"
+    install: |
+      bin.install "lazyjira"
+
 release:
   footer: ""
