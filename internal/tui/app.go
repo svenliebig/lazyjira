@@ -13,6 +13,8 @@ import (
 	"github.com/svenliebig/lazyjira/internal/config"
 	"github.com/svenliebig/lazyjira/internal/exclusions"
 	"github.com/svenliebig/lazyjira/internal/jira"
+	"github.com/svenliebig/lazyjira/internal/settings"
+	"github.com/svenliebig/lazyjira/internal/theme"
 	"github.com/svenliebig/lazyjira/internal/tui/modals"
 	"github.com/svenliebig/lazyjira/internal/tui/shared"
 	"github.com/svenliebig/lazyjira/internal/tui/views"
@@ -38,6 +40,7 @@ const (
 	modalAI
 	modalTransition
 	modalExclude
+	modalSettings
 )
 
 // Model is the root bubbletea model.
@@ -65,21 +68,26 @@ type Model struct {
 	aiModal         modals.AIModal
 	transitionModal modals.TransitionModal
 	excludeModal    modals.ExcludeModal
+	settingsModal   modals.SettingsModal
 
 	// State
-	currentIssue *jira.Issue
-	allIssues    []jira.Issue
-	exclusions   *exclusions.Store
-	loading      bool
-	err          string
-	statusMsg    string
+	currentIssue  *jira.Issue
+	allIssues     []jira.Issue
+	exclusions    *exclusions.Store
+	appSettings   *settings.Settings
+	customThemes  []theme.Theme
+	loading       bool
+	err           string
+	statusMsg     string
 }
 
-func New(cfg *config.Config, jiraClient *jira.Client, store *exclusions.Store) Model {
+func New(cfg *config.Config, jiraClient *jira.Client, store *exclusions.Store, appSettings *settings.Settings, customThemes []theme.Theme) Model {
 	m := Model{
-		cfg:        cfg,
-		jiraClient: jiraClient,
-		exclusions: store,
+		cfg:          cfg,
+		jiraClient:   jiraClient,
+		exclusions:   store,
+		appSettings:  appSettings,
+		customThemes: customThemes,
 	}
 	if !cfg.IsComplete() {
 		m.activeModal = modalAuth
@@ -220,6 +228,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.activeModal = modalNone
 		m.statusMsg = "Issue excluded"
+		return m, nil
+
+	case shared.ThemeSelectedMsg:
+		if t, ok := theme.FindByName(msg.Name, m.customThemes); ok {
+			theme.SetTheme(t)
+			shared.RefreshStyles()
+			m.appSettings.ActiveTheme = msg.Name
+			_ = settings.Save(m.appSettings)
+		}
+		m.activeModal = modalNone
+		m.statusMsg = "Theme applied"
 		return m, nil
 
 	case shared.ErrMsg:
@@ -364,6 +383,12 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.activeModal = modalExclude
 			return m, nil
 		}
+
+	case shared.KeySettings:
+		allThemes := theme.All(m.customThemes)
+		m.settingsModal = modals.NewSettingsModal(allThemes, m.appSettings.ActiveTheme)
+		m.activeModal = modalSettings
+		return m, nil
 	}
 
 	// Delegate navigation to active view
@@ -401,6 +426,10 @@ func (m Model) updateActiveChild(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var updated tea.Model
 		updated, cmd = m.excludeModal.Update(msg)
 		m.excludeModal = updated.(modals.ExcludeModal)
+	case modalSettings:
+		var updated tea.Model
+		updated, cmd = m.settingsModal.Update(msg)
+		m.settingsModal = updated.(modals.SettingsModal)
 	default:
 		switch m.currentView {
 		case viewIssueList:
@@ -489,7 +518,7 @@ func (m Model) renderStatusBar() string {
 			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI", "x:exclude")
 		}
 	} else {
-		hints = []string{"l:list", "?:help", "q:quit"}
+		hints = []string{"l:list", "s:settings", "?:help", "q:quit"}
 		if m.currentView == viewIssueList {
 			hints = append(hints, "enter:focus detail")
 		}
@@ -534,6 +563,8 @@ func (m Model) renderModal() string {
 		return m.transitionModal.View()
 	case modalExclude:
 		return m.excludeModal.View()
+	case modalSettings:
+		return m.settingsModal.View()
 	}
 	return ""
 }

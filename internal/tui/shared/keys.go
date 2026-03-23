@@ -18,4 +18,5 @@ const (
 	KeyEsc        = "esc"
 	KeyQuit       = "q"
 	KeyExclude    = "x"
+	KeySettings   = "s"
 )

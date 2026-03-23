@@ -1,81 +1,110 @@
 package shared
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+	"github.com/svenliebig/lazyjira/internal/theme"
+)
 
 var (
-	// Colors
-	colorPrimary   = lipgloss.Color("#7C3AED")
-	colorSecondary = lipgloss.Color("#6B7280") //nolint:unused
-	colorSuccess   = lipgloss.Color("#10B981")
-	colorError     = lipgloss.Color("#EF4444")
-	colorMuted     = lipgloss.Color("#9CA3AF")
-	colorBg        = lipgloss.Color("#1F2937")
-	colorSurface   = lipgloss.Color("#374151")
-	colorText      = lipgloss.Color("#F9FAFB")
-	colorSubtext   = lipgloss.Color("#D1D5DB")
-	colorBorder = lipgloss.Color("#4B5563")
-	colorFocus  = lipgloss.Color("#7C3AED")
-
 	// Exported for use in child packages
+	ColorBorder lipgloss.Color
+	ColorFocus  lipgloss.Color
+
+	StyleHeader      lipgloss.Style
+	StyleStatusBar   lipgloss.Style
+	StyleKeyHint     lipgloss.Style
+	StyleKeyHintSep  lipgloss.Style
+	StyleModal       lipgloss.Style
+	StyleModalTitle  lipgloss.Style
+	StyleSelectedItem lipgloss.Style
+	StyleNormalItem  lipgloss.Style
+	StyleMuted       lipgloss.Style
+	StyleError       lipgloss.Style
+	StyleSuccess     lipgloss.Style
+	StyleIssueKey    lipgloss.Style
+	StyleIssueStatus lipgloss.Style
+	StyleContentArea lipgloss.Style
+)
+
+func init() {
+	RefreshStyles()
+}
+
+// RefreshStyles rebuilds all styles from the current theme. Call this after
+// calling theme.SetTheme to apply a new color scheme.
+func RefreshStyles() {
+	t := theme.Current
+
+	colorPrimary := lipgloss.Color(t.Primary)
+	colorSuccess := lipgloss.Color(t.Success)
+	colorError := lipgloss.Color(t.Error)
+	colorMuted := lipgloss.Color(t.Muted)
+	colorBg := lipgloss.Color(t.Bg)
+	colorSurface := lipgloss.Color(t.Surface)
+	colorText := lipgloss.Color(t.Text)
+	colorSubtext := lipgloss.Color(t.Subtext)
+	colorBorder := lipgloss.Color(t.Border)
+	colorFocus := lipgloss.Color(t.Focus)
+
 	ColorBorder = colorBorder
-	ColorFocus  = colorFocus
+	ColorFocus = colorFocus
 
 	StyleHeader = lipgloss.NewStyle().
-			Background(colorPrimary).
-			Foreground(colorText).
-			Bold(true).
-			Padding(0, 2)
+		Background(colorPrimary).
+		Foreground(colorText).
+		Bold(true).
+		Padding(0, 2)
 
 	StyleStatusBar = lipgloss.NewStyle().
-			Background(colorSurface).
-			Foreground(colorSubtext).
-			Padding(0, 1)
+		Background(colorSurface).
+		Foreground(colorSubtext).
+		Padding(0, 1)
 
 	StyleKeyHint = lipgloss.NewStyle().
-			Foreground(colorPrimary).
-			Bold(true)
+		Foreground(colorPrimary).
+		Bold(true)
 
 	StyleKeyHintSep = lipgloss.NewStyle().
-			Foreground(colorMuted)
+		Foreground(colorMuted)
 
 	StyleModal = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(colorFocus).
-			Background(colorBg).
-			Padding(1, 2)
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(colorFocus).
+		Background(colorBg).
+		Padding(1, 2)
 
 	StyleModalTitle = lipgloss.NewStyle().
-			Foreground(colorPrimary).
-			Bold(true).
-			MarginBottom(1)
+		Foreground(colorPrimary).
+		Bold(true).
+		MarginBottom(1)
 
 	StyleSelectedItem = lipgloss.NewStyle().
-				Foreground(colorPrimary).
-				Bold(true)
+		Foreground(colorPrimary).
+		Bold(true)
 
 	StyleNormalItem = lipgloss.NewStyle().
-			Foreground(colorText)
+		Foreground(colorText)
 
 	StyleMuted = lipgloss.NewStyle().
-			Foreground(colorMuted)
+		Foreground(colorMuted)
 
 	StyleError = lipgloss.NewStyle().
-			Foreground(colorError).
-			Bold(true)
+		Foreground(colorError).
+		Bold(true)
 
 	StyleSuccess = lipgloss.NewStyle().
-			Foreground(colorSuccess)
+		Foreground(colorSuccess)
 
 	StyleIssueKey = lipgloss.NewStyle().
-			Foreground(colorPrimary).
-			Bold(true)
+		Foreground(colorPrimary).
+		Bold(true)
 
 	StyleIssueStatus = lipgloss.NewStyle().
-				Foreground(colorSuccess).
-				Padding(0, 1).
-				Border(lipgloss.NormalBorder()).
-				BorderForeground(colorSuccess)
+		Foreground(colorSuccess).
+		Padding(0, 1).
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(colorSuccess)
 
 	StyleContentArea = lipgloss.NewStyle().
-				Padding(1, 2)
-)
+		Padding(1, 2)
+}

@@ -6,9 +6,13 @@
 ┌──────────────────────────────────────────────────────────────────────┐
 │                             lazyjira                                  │
 │                                                                       │
-│  ┌──────────┐  ┌────────────┐  ┌──────────┐  ┌────────┐  ┌────────┐ │
-│  │  config  │  │ exclusions │  │   jira   │  │  tui   │  │ integr │ │
-│  └──────────┘  └────────────┘  └──────────┘  └────────┘  └────────┘ │
+│  ┌────────┐  ┌────────────┐  ┌──────────┐  ┌────────┐  ┌────────┐  │
+│  │ config │  │ exclusions │  │   jira   │  │  tui   │  │ integr │  │
+│  └────────┘  └────────────┘  └──────────┘  └────────┘  └────────┘  │
+│                                                                       │
+│  ┌──────────┐  ┌──────────┐                                          │
+│  │  theme   │  │ settings │                                          │
+│  └──────────┘  └──────────┘                                          │
 │                                                                       │
 │  main.go — composition root                                           │
 └──────────────────────────────────────────────────────────────────────┘
@@ -16,11 +20,19 @@
 
 ### main.go — Composition Root
 
-Parses CLI flags, loads config, constructs a `jira.Client` if credentials are available, and hands everything to `tui.New()` before starting the Bubble Tea event loop.
+Parses CLI flags, loads config, loads settings, loads custom themes, applies the saved theme, constructs a `jira.Client` if credentials are available, and hands everything to `tui.New()` before starting the Bubble Tea event loop.
 
 ### internal/config
 
 Responsible for the full credential resolution chain: config file → environment variables → CLI flags (each level overrides the previous). Owns the JSON schema for `~/.config/lazyjira/config.json` and the `IsComplete()` check.
+
+### internal/theme
+
+Owns the `Theme` struct, the list of predefined themes, the `Current` global variable, `SetTheme()`, and `LoadCustom()` which reads user-defined themes from `~/.config/lazyjira/themes.json`. Has no knowledge of the TUI. Used by `shared.RefreshStyles()` to rebuild all lipgloss styles when the theme changes.
+
+### internal/settings
+
+Owns the `Settings` struct (`ActiveTheme string`) and `Load()`/`Save()` backed by `~/.config/lazyjira/settings.json`. Follows the same XDG path convention as `config` and `exclusions`. Has no knowledge of the TUI.
 
 ### internal/exclusions
 
@@ -58,7 +70,7 @@ internal/tui/
 ├── shared/
 │   ├── messages.go         All tea.Msg types (domain events)
 │   ├── keys.go             Key constants
-│   └── styles.go           All lipgloss style definitions and exported colors
+│   └── styles.go           Lipgloss styles rebuilt by RefreshStyles() from theme.Current
 │
 ├── views/
 │   ├── home.go             Home/landing screen (stateless)
@@ -72,7 +84,9 @@ internal/tui/
     ├── list_selector.go    "l" sub-menu: choose which list to load
     ├── copy_modal.go       "y" sub-menu: copy key / URL / title / description
     ├── transition_modal.go "t" sub-menu: numbered transition picker
-    └── ai_modal.go         "a→s" AI summary with spinner and viewport
+    ├── ai_modal.go         "a→s" AI summary with spinner and viewport
+    ├── exclude_modal.go    "x" sub-menu: exclude by key or parent
+    └── settings_modal.go   "s" settings screen: theme selector
 ```
 
 ### Root Model (`app.go`)
@@ -116,6 +130,7 @@ Each modal emits one of the message types in `shared/messages.go` when closed or
 | `TransitionModal` | `TransitionSelectedMsg{ID}` or `CloseModalMsg` |
 | `AIModal` | Internally handles `AICommitsLoadedMsg`, `AISummaryMsg`; emits `CloseModalMsg` on close |
 | `ExcludeModal` | `ExcludeActionMsg{Type, Value}` or `CloseModalMsg`. The `p` (parent) option is visually strikethrough and non-functional when the current issue has no parent. |
+| `SettingsModal` | `ThemeSelectedMsg{Name}` or `CloseModalMsg`. Receives the full theme list (predefined + custom) and the name of the currently active theme from the root model. |
 
 ---
 
@@ -184,8 +199,12 @@ main
  └─► exclusions
  │    └─► jira (types only)
  └─► jira
+ └─► settings
+ └─► theme
+ └─► tui/shared  (RefreshStyles called at startup)
  └─► tui/app
       └─► tui/shared
+      │    └─► theme
       └─► tui/views
       │    └─► tui/shared
       │    └─► jira (types only)
@@ -193,13 +212,16 @@ main
       └─► tui/modals
       │    └─► tui/shared
       │    └─► jira (types only)
+      │    └─► theme
       │    └─► git
       │    └─► ollama
       └─► config
       └─► exclusions
+      └─► settings
+      └─► theme
       └─► jira
       └─► clipboard
       └─► browser
 ```
 
-No circular dependencies. `tui/shared` is the only package imported by both `tui/views` and `tui/modals`, and it imports nothing from the `tui` tree itself. `exclusions` is a leaf-adjacent package — it imports only `jira` (for the `Issue` type) and standard library packages.
+No circular dependencies. `tui/shared` is the only package imported by both `tui/views` and `tui/modals`, and it imports nothing from the `tui` tree itself. `theme` and `settings` are leaf packages with no dependencies on the TUI or on each other.

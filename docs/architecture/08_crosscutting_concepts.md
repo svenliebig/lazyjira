@@ -53,23 +53,30 @@ Commands create a `context.Background()` at the call site. This provides a hook 
 
 ## Styling and Theming
 
-All visual styles are defined centrally in `internal/tui/shared/styles.go` as `lipgloss.Style` variables. No inline style literals exist outside this file.
+All visual styles are defined centrally in `internal/tui/shared/styles.go` as exported `lipgloss.Style` variables. No inline style literals exist outside this file.
 
-**Colour palette:**
+Styles are **dynamic**: `RefreshStyles()` rebuilds all variables from `theme.Current`. The function is called once at startup (via `init()`) and again whenever the user selects a new theme. This means all call sites (`shared.StyleHeader.Render(…)` etc.) remain unchanged.
 
-| Variable | Hex | Use |
-|----------|-----|-----|
-| `colorPrimary` | `#7C3AED` | Headings, key hints, focused borders, issue keys |
-| `colorSuccess` | `#10B981` | Success messages, status badges |
-| `colorError` | `#EF4444` | Error messages |
-| `colorMuted` | `#9CA3AF` | Labels, separators, secondary text |
-| `colorBg` | `#1F2937` | Modal backgrounds |
-| `colorSurface` | `#374151` | Status bar background |
-| `colorText` | `#F9FAFB` | Primary text |
-| `colorBorder` | `#4B5563` | Inactive panel borders |
-| `colorFocus` | `#7C3AED` | Active panel borders (same as primary) |
+**Theme struct fields** (defined in `internal/theme`):
 
-Exported as `ColorBorder` and `ColorFocus` for use in view packages that need to apply border colours programmatically.
+| Field | Default (`default` theme) | Use |
+|-------|---------------------------|-----|
+| `primary` | `#7C3AED` | Headings, key hints, focused borders, issue keys |
+| `success` | `#10B981` | Success messages, status badges |
+| `error` | `#EF4444` | Error messages |
+| `muted` | `#9CA3AF` | Labels, separators, secondary text |
+| `bg` | `#1F2937` | Modal backgrounds |
+| `surface` | `#374151` | Status bar background |
+| `text` | `#F9FAFB` | Primary text |
+| `subtext` | `#D1D5DB` | Secondary text (status bar) |
+| `border` | `#4B5563` | Inactive panel borders |
+| `focus` | `#7C3AED` | Active panel borders |
+
+`ColorBorder` and `ColorFocus` are exported from `shared` for use in view packages that need to apply border colours programmatically; they are also updated by `RefreshStyles()`.
+
+**Predefined themes:** `default`, `dracula`, `nord`, `catppuccin-mocha`, `catppuccin-macchiato`, `catppuccin-frappe`, `catppuccin-latte`.
+
+**Custom themes** can be added to `~/.config/lazyjira/themes.json` as a JSON array of `Theme` objects. They appear after the predefined themes in the settings modal.
 
 ---
 
@@ -111,24 +118,31 @@ The status bar (`renderStatusBar()`) is the primary discoverability mechanism. I
 
 | State | Shown hints |
 |-------|-------------|
-| Home view | `l:list  ?:help  q:quit` |
-| List view, left focus | `l:list  ?:help  q:quit  enter:focus detail  [action keys if issue selected]` |
+| Home / List view | `l:list  s:settings  ?:help  q:quit` |
+| List view, left focus | `l:list  s:settings  ?:help  q:quit  enter:focus detail  [action keys if issue selected]` |
 | List view, right focus | `j/k:scroll  esc:back  [action keys]` |
-| Copy chord active | `k:key  u:url  t:title  d:desc  esc:cancel` |
+| Excluded list view | `j/k:navigate  x:remove  esc:back  ?:help` |
+| Copy chord active | `↑/k ↓/j:navigate  enter/l:select  u:url  t:title  d:desc  h/esc:cancel` |
 | AI chord active | `s:summary  esc:cancel` |
 
-Action keys (`o:open  y:copy  t:transition  a:AI`) appear whenever `currentIssue != nil`.
+Action keys (`o:open  y:copy  t:transition  a:AI  x:exclude`) appear whenever `currentIssue != nil`.
 
 ---
 
 ## Config Persistence
 
-`config.Save()` uses `os.MkdirAll` with `0700` before writing with `os.WriteFile` with `0600`. This ensures:
+All persistent files live in `$XDG_CONFIG_HOME/lazyjira/` (default `~/.config/lazyjira/`). Every writer follows the same pattern: `os.MkdirAll(dir, 0700)` then `os.WriteFile(path, data, 0600)`. This ensures:
 - Directory is created if absent
-- Only the owning user can read or write the file
-- Credentials are not world-readable
+- Only the owning user can read or write the files
 
-The config file format is intentionally simple JSON with three string fields. No migration mechanism is needed at this scale.
+| File | Package | Contents |
+|------|---------|---------|
+| `config.json` | `internal/config` | Jira credentials (URL, email, token) |
+| `exclusions.json` | `internal/exclusions` | Array of exclusion rules |
+| `settings.json` | `internal/settings` | User preferences (`activeTheme`) |
+| `themes.json` | `internal/theme` | Optional array of custom `Theme` objects |
+
+All files use `encoding/json` with `json.MarshalIndent`. No migration mechanism is needed at this scale; unknown fields are ignored on read.
 
 ---
 

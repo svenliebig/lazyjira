@@ -10,7 +10,10 @@ import (
 	"github.com/svenliebig/lazyjira/internal/config"
 	"github.com/svenliebig/lazyjira/internal/exclusions"
 	"github.com/svenliebig/lazyjira/internal/jira"
+	"github.com/svenliebig/lazyjira/internal/settings"
+	"github.com/svenliebig/lazyjira/internal/theme"
 	"github.com/svenliebig/lazyjira/internal/tui"
+	"github.com/svenliebig/lazyjira/internal/tui/shared"
 )
 
 var version = "dev"
@@ -38,7 +41,23 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Warning: could not load exclusions: %v\n", err)
 	}
 
-	model := tui.New(cfg, jiraClient, store)
+	appSettings, err := settings.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not load settings: %v\n", err)
+		appSettings = &settings.Settings{ActiveTheme: "default"}
+	}
+
+	customThemes, err := theme.LoadCustom()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not load custom themes: %v\n", err)
+	}
+
+	if t, ok := theme.FindByName(appSettings.ActiveTheme, customThemes); ok {
+		theme.SetTheme(t)
+		shared.RefreshStyles()
+	}
+
+	model := tui.New(cfg, jiraClient, store, appSettings, customThemes)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)

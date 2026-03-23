@@ -6,11 +6,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/svenliebig/lazyjira/internal/config"
 	"github.com/svenliebig/lazyjira/internal/exclusions"
+	"github.com/svenliebig/lazyjira/internal/settings"
 )
 
 func TestSmoke_AuthModal(t *testing.T) {
 	cfg := &config.Config{}
-	m := New(cfg, nil, &exclusions.Store{})
+	m := New(cfg, nil, &exclusions.Store{}, &settings.Settings{ActiveTheme: "default"}, nil)
 	_ = m.Init()
 
 	model, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
@@ -23,7 +24,7 @@ func TestSmoke_AuthModal(t *testing.T) {
 
 func TestSmoke_HomeView(t *testing.T) {
 	cfg := &config.Config{JiraCloudURL: "https://test.atlassian.net", JiraAPIToken: "tok"}
-	m := New(cfg, nil, &exclusions.Store{})
+	m := New(cfg, nil, &exclusions.Store{}, &settings.Settings{ActiveTheme: "default"}, nil)
 
 	model, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m = model.(Model)
@@ -35,7 +36,7 @@ func TestSmoke_HomeView(t *testing.T) {
 
 func TestSmoke_HelpModal(t *testing.T) {
 	cfg := &config.Config{JiraCloudURL: "https://test.atlassian.net", JiraAPIToken: "tok"}
-	m := New(cfg, nil, &exclusions.Store{})
+	m := New(cfg, nil, &exclusions.Store{}, &settings.Settings{ActiveTheme: "default"}, nil)
 	model, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m = model.(Model)
 
@@ -49,7 +50,7 @@ func TestSmoke_HelpModal(t *testing.T) {
 
 func TestSmoke_ListModal(t *testing.T) {
 	cfg := &config.Config{JiraCloudURL: "https://test.atlassian.net", JiraAPIToken: "tok"}
-	m := New(cfg, nil, &exclusions.Store{})
+	m := New(cfg, nil, &exclusions.Store{}, &settings.Settings{ActiveTheme: "default"}, nil)
 	model, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m = model.(Model)
 
@@ -63,7 +64,7 @@ func TestSmoke_ListModal(t *testing.T) {
 
 func TestSmoke_EscKey(t *testing.T) {
 	cfg := &config.Config{JiraCloudURL: "https://test.atlassian.net", JiraAPIToken: "tok"}
-	m := New(cfg, nil, &exclusions.Store{})
+	m := New(cfg, nil, &exclusions.Store{}, &settings.Settings{ActiveTheme: "default"}, nil)
 	model, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m = model.(Model)
 
