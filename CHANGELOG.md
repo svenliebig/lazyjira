@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/svenliebig/lazyjira/compare/v1.1.0...v1.2.0) (2026-03-23)
+
+
+### Features
+
+* add homebrew tap to the build ([86ac3e3](https://github.com/svenliebig/lazyjira/commit/86ac3e31fc8d3ea0f8323aee55c33c73902f853e))
+
 ## [1.1.0](https://github.com/svenliebig/lazyjira/compare/v1.0.1...v1.1.0) (2026-03-23)
 
 
