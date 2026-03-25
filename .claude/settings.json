@@ -1,0 +1,15 @@
+{
+    "hooks": {
+        "PreToolUse": [
+            {
+                "matcher": "Read|Grep",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node ./.claude/hooks/read_userconfig_protection.js"
+                    }
+                ]
+            }
+        ]
+    }
+}
