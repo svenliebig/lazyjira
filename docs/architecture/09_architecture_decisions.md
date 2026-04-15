@@ -16,3 +16,4 @@ All significant architecture decisions are documented as individual Architecture
 | [ADR-008](./decisions/ADR-008_chord_key_system.md) | Two-key chord system for sub-actions | Accepted | 2026-03 |
 | [ADR-009](./decisions/ADR-009_adf_to_text.md) | Plain-text ADF conversion | Accepted | 2026-03 |
 | [ADR-010](./decisions/ADR-010_shared_messages_package.md) | Shared messages package to prevent circular imports | Accepted | 2026-03 |
+| [ADR-013](./decisions/ADR-013_tab_system.md) | General Tab System | Accepted | 2026-04 |

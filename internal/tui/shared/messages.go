@@ -51,3 +51,18 @@ type AssignDoneMsg struct{ User jira.User }
 
 // Theme
 type ThemeSelectedMsg struct{ Name string }
+
+// Sprint
+type SprintsLoadedMsg struct{ Sprints []jira.Sprint }
+type SprintSelectedMsg struct{ Sprint jira.Sprint }
+type SprintMoveDoneMsg struct{ Sprint jira.Sprint }
+
+// Change action
+type ChangeActionSelectedMsg struct{ Action string }
+
+// Boards
+type BoardSavedMsg struct {
+	ProjectKey string
+	BoardID    int
+}
+type BoardDeletedMsg struct{ ProjectKey string }

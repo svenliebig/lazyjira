@@ -13,6 +13,9 @@ If a user is on an issue, may it be on the details page of the issue or highligh
   - `y-d` copies the description of the issue
 - `o` opens the issue in the browser
 - `a` opens the assign modal — a fuzzy-searchable list of users who can be assigned to the issue. The list is fetched from Jira for the specific issue. Typing filters by display name or email address; `↑`/`k` and `↓`/`j` navigate; `enter` confirms; `esc` cancels. On success a status message "Assigned to <name>" is shown.
+- `c` opens the change modal for modifying issue properties
+  - `c-s` opens the sprint picker — a searchable list of active and future sprints for the issue's board. The board must be configured in the Boards tab first (press `]` to navigate there). A status message "Moved to sprint <name>" is shown on success.
+  - `c-a` opens the assign modal — same behaviour as pressing `a` directly (see below)
 - `m` opens the modal for AI assistance
   - `m-s` creates a summary of the work on the issue, for that we use a [Local LLM](./LOCAL_LLM.md) to generate a summary of the work done. The work is done is resulting from the commits that are linked to the issue, for that the tool can query the git log that is associated with the issue. This action has to be performed while in the directory of the repository. If there is no git repository in the directory, the tool will prompt the user to navigate to a git repository when calling the tool.
 - `t` opens the modal for transition the issue to a new status, the available transitions are listed in the modal, mostly fetched beforehand somehow cached or fetched on demand. The user can then select the new status by pressing the number of the status.

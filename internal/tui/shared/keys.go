@@ -21,4 +21,7 @@ const (
 	KeyExclude    = "x"
 	KeySettings   = "s"
 	KeyUnassign   = "u"
+	KeyChange     = "c"
+	KeyTabPrev    = "["
+	KeyTabNext    = "]"
 )

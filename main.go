@@ -7,6 +7,7 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/svenliebig/lazyjira/internal/boards"
 	"github.com/svenliebig/lazyjira/internal/config"
 	"github.com/svenliebig/lazyjira/internal/exclusions"
 	"github.com/svenliebig/lazyjira/internal/jira"
@@ -52,12 +53,17 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Warning: could not load custom themes: %v\n", err)
 	}
 
+	boardsStore, err := boards.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: could not load boards: %v\n", err)
+	}
+
 	if t, ok := theme.FindByName(appSettings.ActiveTheme, customThemes); ok {
 		theme.SetTheme(t)
 		shared.RefreshStyles()
 	}
 
-	model := tui.New(cfg, jiraClient, store, appSettings, customThemes)
+	model := tui.New(cfg, jiraClient, store, appSettings, customThemes, boardsStore)
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)

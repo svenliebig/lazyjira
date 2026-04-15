@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/svenliebig/lazyjira/internal/boards"
 	"github.com/svenliebig/lazyjira/internal/browser"
 	"github.com/svenliebig/lazyjira/internal/clipboard"
 	"github.com/svenliebig/lazyjira/internal/config"
@@ -18,6 +19,11 @@ import (
 	"github.com/svenliebig/lazyjira/internal/tui/modals"
 	"github.com/svenliebig/lazyjira/internal/tui/shared"
 	"github.com/svenliebig/lazyjira/internal/tui/views"
+)
+
+const (
+	tabIssues = 0
+	tabBoards = 1
 )
 
 type viewState int
@@ -42,6 +48,8 @@ const (
 	modalExclude
 	modalSettings
 	modalAssign
+	modalChange
+	modalSprintPicker
 )
 
 // Model is the root bubbletea model.
@@ -53,6 +61,7 @@ type Model struct {
 	jiraClient  *jira.Client
 	currentView viewState
 	activeModal modalState
+	activeTab   int
 	pendingKey  string
 
 	// View models
@@ -60,36 +69,42 @@ type Model struct {
 	issueListView    views.IssueListModel
 	issueDetailView  views.IssueDetailModel
 	excludedListView views.ExcludedListModel
+	boardsView       views.BoardsModel
 
 	// Modal models
-	authModal       modals.AuthModal
-	helpModal       modals.HelpModal
-	listModal       modals.ListSelectorModal
-	copyModal       modals.CopyModal
-	aiModal         modals.AIModal
-	transitionModal modals.TransitionModal
-	excludeModal    modals.ExcludeModal
-	settingsModal   modals.SettingsModal
-	assignModal     modals.AssignModal
+	authModal         modals.AuthModal
+	helpModal         modals.HelpModal
+	listModal         modals.ListSelectorModal
+	copyModal         modals.CopyModal
+	aiModal           modals.AIModal
+	transitionModal   modals.TransitionModal
+	excludeModal      modals.ExcludeModal
+	settingsModal     modals.SettingsModal
+	assignModal       modals.AssignModal
+	changeModal       modals.ChangeModal
+	sprintPickerModal modals.SprintPickerModal
 
 	// State
-	currentIssue  *jira.Issue
-	allIssues     []jira.Issue
-	exclusions    *exclusions.Store
-	appSettings   *settings.Settings
-	customThemes  []theme.Theme
-	loading       bool
-	err           string
-	statusMsg     string
+	currentIssue *jira.Issue
+	allIssues    []jira.Issue
+	exclusions   *exclusions.Store
+	boardsStore  *boards.Store
+	appSettings  *settings.Settings
+	customThemes []theme.Theme
+	loading      bool
+	err          string
+	statusMsg    string
 }
 
-func New(cfg *config.Config, jiraClient *jira.Client, store *exclusions.Store, appSettings *settings.Settings, customThemes []theme.Theme) Model {
+func New(cfg *config.Config, jiraClient *jira.Client, store *exclusions.Store, appSettings *settings.Settings, customThemes []theme.Theme, boardsStore *boards.Store) Model {
 	m := Model{
 		cfg:          cfg,
 		jiraClient:   jiraClient,
 		exclusions:   store,
 		appSettings:  appSettings,
 		customThemes: customThemes,
+		boardsStore:  boardsStore,
+		boardsView:   views.NewBoardsModel(boardsStore.All(), 0, 0),
 	}
 	if !cfg.IsComplete() {
 		m.activeModal = modalAuth
@@ -122,14 +137,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		m.allIssues = msg.Issues
 		filtered := m.exclusions.Filter(m.allIssues)
-		m.issueListView = views.NewIssueListModel(filtered, m.width, m.height-2)
+		m.issueListView = views.NewIssueListModel(filtered, m.width, m.height-3)
 		m.currentView = viewIssueList
 		m.currentIssue = m.issueListView.CurrentIssue()
 		return m, nil
 
 	case shared.IssueSelectedMsg:
 		m.currentIssue = &msg.Issue
-		m.issueDetailView = views.NewIssueDetailModel(msg.Issue, m.width, m.height-4)
+		m.issueDetailView = views.NewIssueDetailModel(msg.Issue, m.width, m.height-5)
 		m.currentView = viewIssueDetail
 		return m, nil
 
@@ -157,7 +172,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.activeModal = modalNone
 		switch msg.Type {
 		case "excluded":
-			m.excludedListView = views.NewExcludedListModel(m.exclusions.Rules(), m.width, m.height-2)
+			m.excludedListView = views.NewExcludedListModel(m.exclusions.Rules(), m.width, m.height-3)
 			m.currentView = viewExcludedList
 			m.currentIssue = nil
 		default: // "assigned"
@@ -292,6 +307,71 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusMsg = "Theme applied"
 		return m, nil
 
+	case shared.ChangeActionSelectedMsg:
+		m.activeModal = modalNone
+		switch msg.Action {
+		case "sprint":
+			if m.currentIssue != nil && m.jiraClient != nil {
+				projectKey := extractProjectKey(m.currentIssue.Key)
+				boardID, ok := m.boardsStore.Get(projectKey)
+				if !ok {
+					m.statusMsg = "No board configured for " + projectKey + ". Add one in the Boards tab (])."
+					return m, nil
+				}
+				m.loading = true
+				return m, m.fetchSprintsCmd(boardID)
+			}
+		case "assign":
+			if m.currentIssue != nil && m.jiraClient != nil {
+				m.loading = true
+				return m, m.fetchAssignableUsersCmd()
+			}
+		}
+		return m, nil
+
+	case shared.SprintsLoadedMsg:
+		m.sprintPickerModal = modals.NewSprintPickerModal(msg.Sprints)
+		m.activeModal = modalSprintPicker
+		m.loading = false
+		return m, nil
+
+	case shared.SprintSelectedMsg:
+		if m.currentIssue != nil && m.jiraClient != nil {
+			m.activeModal = modalNone
+			m.loading = true
+			return m, m.doMoveToSprintCmd(msg.Sprint)
+		}
+		return m, nil
+
+	case shared.SprintMoveDoneMsg:
+		m.loading = false
+		if m.currentIssue != nil {
+			key := m.currentIssue.Key
+			for i, iss := range m.allIssues {
+				if iss.Key == key {
+					m.allIssues[i].Fields.Sprint = &msg.Sprint
+					break
+				}
+			}
+			m.currentIssue.Fields.Sprint = &msg.Sprint
+		}
+		m.statusMsg = "Moved to sprint " + msg.Sprint.Name
+		return m, nil
+
+	case shared.BoardSavedMsg:
+		if m.boardsStore != nil {
+			_ = m.boardsStore.Set(msg.ProjectKey, msg.BoardID)
+			m.boardsView = views.NewBoardsModel(m.boardsStore.All(), m.width, m.height-3)
+		}
+		return m, nil
+
+	case shared.BoardDeletedMsg:
+		if m.boardsStore != nil {
+			_ = m.boardsStore.Delete(msg.ProjectKey)
+			m.boardsView = views.NewBoardsModel(m.boardsStore.All(), m.width, m.height-3)
+		}
+		return m, nil
+
 	case shared.ErrMsg:
 		m.loading = false
 		m.err = msg.Err.Error()
@@ -309,8 +389,25 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	}
 
+	// Tab switching always works and clears any pending chord or open modal
+	if key == shared.KeyTabPrev || key == shared.KeyTabNext {
+		if key == shared.KeyTabPrev {
+			m.activeTab = (m.activeTab - 1 + 2) % 2
+		} else {
+			m.activeTab = (m.activeTab + 1) % 2
+		}
+		m.pendingKey = ""
+		m.activeModal = modalNone
+		return m, nil
+	}
+
 	// If modal active, delegate to modal
 	if m.activeModal != modalNone {
+		return m.updateActiveChild(msg)
+	}
+
+	// On the Boards tab all input goes to the boards view
+	if m.activeTab == tabBoards {
 		return m.updateActiveChild(msg)
 	}
 
@@ -424,7 +521,7 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.currentView == viewExcludedList {
 			if rule := m.excludedListView.CurrentRule(); rule != nil {
 				_ = m.exclusions.Remove(*rule)
-				m.excludedListView = views.NewExcludedListModel(m.exclusions.Rules(), m.width, m.height-2)
+				m.excludedListView = views.NewExcludedListModel(m.exclusions.Rules(), m.width, m.height-3)
 				m.statusMsg = "Exclusion removed"
 			}
 			return m, nil
@@ -439,6 +536,13 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.currentIssue != nil && m.jiraClient != nil {
 			m.loading = true
 			return m, m.fetchAssignableUsersCmd()
+		}
+
+	case shared.KeyChange:
+		if m.currentIssue != nil {
+			m.changeModal = modals.NewChangeModal()
+			m.activeModal = modalChange
+			return m, nil
 		}
 
 	case shared.KeyUnassign:
@@ -497,7 +601,21 @@ func (m Model) updateActiveChild(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var updated tea.Model
 		updated, cmd = m.assignModal.Update(msg)
 		m.assignModal = updated.(modals.AssignModal)
+	case modalChange:
+		var updated tea.Model
+		updated, cmd = m.changeModal.Update(msg)
+		m.changeModal = updated.(modals.ChangeModal)
+	case modalSprintPicker:
+		var updated tea.Model
+		updated, cmd = m.sprintPickerModal.Update(msg)
+		m.sprintPickerModal = updated.(modals.SprintPickerModal)
 	default:
+		if m.activeTab == tabBoards {
+			var updated tea.Model
+			updated, cmd = m.boardsView.Update(msg)
+			m.boardsView = updated.(views.BoardsModel)
+			return m, cmd
+		}
 		switch m.currentView {
 		case viewIssueList:
 			var updated tea.Model
@@ -519,10 +637,11 @@ func (m Model) updateActiveChild(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	header := m.renderHeader()
+	tabBar := m.renderTabBar()
 	content := m.renderContent()
 	statusBar := m.renderStatusBar()
 
-	view := lipgloss.JoinVertical(lipgloss.Left, header, content, statusBar)
+	view := lipgloss.JoinVertical(lipgloss.Left, header, tabBar, content, statusBar)
 
 	// Overlay modal if active
 	if m.activeModal != modalNone {
@@ -543,8 +662,22 @@ func (m Model) renderHeader() string {
 	return shared.StyleHeader.Width(m.width).Render(title)
 }
 
+func (m Model) renderTabBar() string {
+	tabs := []string{"Issues", "Boards"}
+	var parts []string
+	for i, name := range tabs {
+		if i == m.activeTab {
+			parts = append(parts, shared.StyleSelectedItem.Render(" "+name+" "))
+		} else {
+			parts = append(parts, shared.StyleMuted.Render(" "+name+" "))
+		}
+	}
+	bar := strings.Join(parts, shared.StyleMuted.Render("|"))
+	return shared.StyleStatusBar.Width(m.width).Render("  " + bar)
+}
+
 func (m Model) renderContent() string {
-	contentHeight := m.height - 2 // header + statusbar
+	contentHeight := m.height - 3 // header + tabbar + statusbar
 	if contentHeight < 0 {
 		contentHeight = 1
 	}
@@ -555,6 +688,10 @@ func (m Model) renderContent() string {
 	}
 	if m.err != "" {
 		return style.Render(shared.StyleError.Render("\n  Error: " + m.err))
+	}
+
+	if m.activeTab == tabBoards {
+		return style.Render(m.boardsView.View())
 	}
 
 	switch m.currentView {
@@ -577,20 +714,22 @@ func (m Model) renderStatusBar() string {
 		hints = []string{"↑/k↓/j:navigate", "enter/l:select", "u:url", "t:title", "d:desc", "h/esc:cancel"}
 	} else if m.pendingKey == shared.KeyAI {
 		hints = []string{"s:summary", "esc:cancel"}
+	} else if m.activeTab == tabBoards {
+		hints = []string{"a:add", "e:edit", "d:delete", "j/k:navigate", "[:prev", "]:next"}
 	} else if m.currentView == viewExcludedList {
-		hints = []string{"j/k:navigate", "x:remove", "esc:back", "?:help"}
+		hints = []string{"j/k:navigate", "x:remove", "esc:back", "?:help", "[:prev", "]:next"}
 	} else if m.currentView == viewIssueList && m.issueListView.IsFocusRight() {
 		hints = []string{"j/k:scroll", "esc:back"}
 		if m.currentIssue != nil {
-			hints = append(hints, "o:open", "y:copy", "t:transition", "a:assign", "u:unassign", "m:AI", "x:exclude")
+			hints = append(hints, "o:open", "y:copy", "t:transition", "a:assign", "u:unassign", "c:change", "m:AI", "x:exclude")
 		}
 	} else {
-		hints = []string{"l:list", "s:settings", "?:help", "q:quit"}
+		hints = []string{"l:list", "s:settings", "?:help", "q:quit", "[:prev", "]:next"}
 		if m.currentView == viewIssueList {
 			hints = append(hints, "enter:focus detail")
 		}
 		if m.currentIssue != nil {
-			hints = append(hints, "o:open", "y:copy", "t:transition", "a:assign", "u:unassign", "m:AI", "x:exclude")
+			hints = append(hints, "o:open", "y:copy", "t:transition", "a:assign", "u:unassign", "c:change", "m:AI", "x:exclude")
 		}
 	}
 
@@ -634,6 +773,10 @@ func (m Model) renderModal() string {
 		return m.settingsModal.View()
 	case modalAssign:
 		return m.assignModal.View()
+	case modalChange:
+		return m.changeModal.View()
+	case modalSprintPicker:
+		return m.sprintPickerModal.View()
 	}
 	return ""
 }
@@ -644,10 +787,11 @@ func overlayModal(background, modal string, w, h int) string {
 }
 
 func (m *Model) updateChildSizes() {
-	contentH := m.height - 2
+	contentH := m.height - 3
 	m.issueListView.SetSize(m.width, contentH)
 	m.issueDetailView.SetSize(m.width, contentH)
 	m.excludedListView.SetSize(m.width, contentH)
+	m.boardsView.SetSize(m.width, contentH)
 }
 
 func (m Model) fetchTransitionsCmd() tea.Cmd {
@@ -705,6 +849,35 @@ func (m Model) doAssignCmd(user jira.User) tea.Cmd {
 		}
 		return shared.AssignDoneMsg{User: user}
 	}
+}
+
+func (m Model) fetchSprintsCmd(boardID int) tea.Cmd {
+	client := m.jiraClient
+	return func() tea.Msg {
+		sprints, err := client.GetSprints(context.Background(), boardID)
+		if err != nil {
+			return shared.ErrMsg{Err: fmt.Errorf("failed to load sprints: %w", err)}
+		}
+		return shared.SprintsLoadedMsg{Sprints: sprints}
+	}
+}
+
+func (m Model) doMoveToSprintCmd(sprint jira.Sprint) tea.Cmd {
+	client := m.jiraClient
+	key := m.currentIssue.Key
+	return func() tea.Msg {
+		if err := client.MoveIssueToSprint(context.Background(), key, sprint.ID); err != nil {
+			return shared.ErrMsg{Err: fmt.Errorf("move to sprint failed: %w", err)}
+		}
+		return shared.SprintMoveDoneMsg{Sprint: sprint}
+	}
+}
+
+func extractProjectKey(issueKey string) string {
+	if idx := strings.Index(issueKey, "-"); idx > 0 {
+		return issueKey[:idx]
+	}
+	return issueKey
 }
 
 func fetchAssignedCmd(client *jira.Client) tea.Cmd {
