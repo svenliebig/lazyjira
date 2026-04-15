@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.0](https://github.com/svenliebig/lazyjira/compare/v1.3.0...v1.4.0) (2026-04-15)
+
+
+### Features
+
+* add assign feature to the issue actions ([50d5bbf](https://github.com/svenliebig/lazyjira/commit/50d5bbfd643d11f40f9551572045e06eb2089aa4))
+* add sprint, original estimate and time remaining fields ([91441b7](https://github.com/svenliebig/lazyjira/commit/91441b7c5ae5e4b692f67c38aba4cdb5ac73459f))
+* add unassign feature to issues ([0c2b5c8](https://github.com/svenliebig/lazyjira/commit/0c2b5c88f8319918245d39b9b15820d7bc2c62a1))
+
 ## [1.3.0](https://github.com/svenliebig/lazyjira/compare/v1.2.0...v1.3.0) (2026-03-23)
 
 
