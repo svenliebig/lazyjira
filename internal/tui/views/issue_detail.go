@@ -61,6 +61,27 @@ func buildDetailContent(issue jira.Issue, width int) string {
 		sb.WriteString("\n")
 	}
 
+	// Sprint
+	if issue.Fields.Sprint != nil {
+		sb.WriteString(shared.StyleMuted.Render("Sprint: "))
+		sb.WriteString(shared.StyleNormalItem.Render(
+			fmt.Sprintf("%s (%s)", issue.Fields.Sprint.Name, issue.Fields.Sprint.State),
+		))
+		sb.WriteString("\n")
+	}
+
+	// Time tracking
+	if issue.Fields.TimeTracking.OriginalEstimateSeconds > 0 {
+		sb.WriteString(shared.StyleMuted.Render("Original estimate: "))
+		sb.WriteString(shared.StyleNormalItem.Render(formatSeconds(issue.Fields.TimeTracking.OriginalEstimateSeconds)))
+		sb.WriteString("\n")
+	}
+	if issue.Fields.TimeTracking.RemainingEstimateSeconds > 0 {
+		sb.WriteString(shared.StyleMuted.Render("Time remaining: "))
+		sb.WriteString(shared.StyleNormalItem.Render(formatSeconds(issue.Fields.TimeTracking.RemainingEstimateSeconds)))
+		sb.WriteString("\n")
+	}
+
 	sb.WriteString("\n")
 	sb.WriteString(shared.StyleMuted.Render(strings.Repeat("─", min(width-4, 60))))
 	sb.WriteString("\n\n")
@@ -110,4 +131,17 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func formatSeconds(s int) string {
+	h := s / 3600
+	m := (s % 3600) / 60
+	switch {
+	case h == 0:
+		return fmt.Sprintf("%dm", m)
+	case m == 0:
+		return fmt.Sprintf("%dh", h)
+	default:
+		return fmt.Sprintf("%dh %dm", h, m)
+	}
 }

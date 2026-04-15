@@ -13,6 +13,19 @@ type IssueFields struct {
 	Assignee    *User
 	Reporter    *User
 	Parent      *IssueParent
+	Sprint      *Sprint
+	TimeTracking TimeTracking
+}
+
+type Sprint struct {
+	ID    int
+	Name  string
+	State string
+}
+
+type TimeTracking struct {
+	OriginalEstimateSeconds  int
+	RemainingEstimateSeconds int
 }
 
 type IssueParent struct {

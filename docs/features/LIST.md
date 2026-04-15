@@ -17,9 +17,22 @@ Shows all active exclusion rules. Each row displays the excluded value (issue ke
 When a list is displayed, the screen is split into two panels:
 
 - **Left panel (~40%)** — scrollable list of issues or rules. Navigation with `j`/`k` or arrow keys.
-- **Right panel (~60%)** — detail view of the currently highlighted issue (key, summary, status, assignee, reporter, description). Updates live as the cursor moves.
+- **Right panel (~60%)** — detail view of the currently highlighted issue (key, summary, status, assignee, reporter, sprint, original estimate, time remaining, description). Updates live as the cursor moves.
 
 Pressing `Enter` moves focus to the right panel for scrolling long descriptions. Pressing `Esc` returns focus to the left panel.
+
+### Issue detail fields
+
+| Field | Notes |
+|---|---|
+| Key & Summary | Always shown |
+| Status | Always shown |
+| Assignee | Shown when assigned |
+| Reporter | Shown when present |
+| Sprint | Shown when the issue belongs to a sprint; includes sprint state (e.g. `Sprint 42 (active)`) |
+| Original estimate | Shown when time tracking is enabled and an estimate has been set; formatted as `Xh Ym` |
+| Time remaining | Shown when time tracking is enabled and remaining time is recorded; formatted as `Xh Ym` |
+| Description | Always shown; falls back to "No description provided." |
 
 ## Filtering
 
