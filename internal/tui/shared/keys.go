@@ -19,4 +19,5 @@ const (
 	KeyQuit       = "q"
 	KeyExclude    = "x"
 	KeySettings   = "s"
+	KeyUnassign   = "u"
 )

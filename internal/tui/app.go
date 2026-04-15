@@ -230,6 +230,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusMsg = "Issue excluded"
 		return m, nil
 
+	case shared.UnassignDoneMsg:
+		m.loading = false
+		if m.currentIssue != nil {
+			key := m.currentIssue.Key
+			filtered := make([]jira.Issue, 0, len(m.allIssues))
+			for _, iss := range m.allIssues {
+				if iss.Key != key {
+					filtered = append(filtered, iss)
+				}
+			}
+			m.allIssues = filtered
+			m.issueListView = views.NewIssueListModel(m.exclusions.Filter(m.allIssues), m.width, m.height-2)
+			m.currentIssue = m.issueListView.CurrentIssue()
+			m.currentView = viewIssueList
+		}
+		m.statusMsg = "Unassigned"
+		return m, nil
+
 	case shared.ThemeSelectedMsg:
 		if t, ok := theme.FindByName(msg.Name, m.customThemes); ok {
 			theme.SetTheme(t)
@@ -384,6 +402,12 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+	case shared.KeyUnassign:
+		if m.currentIssue != nil && m.jiraClient != nil {
+			m.loading = true
+			return m, m.doUnassignCmd()
+		}
+
 	case shared.KeySettings:
 		allThemes := theme.All(m.customThemes)
 		m.settingsModal = modals.NewSettingsModal(allThemes, m.appSettings.ActiveTheme)
@@ -515,7 +539,7 @@ func (m Model) renderStatusBar() string {
 	} else if m.currentView == viewIssueList && m.issueListView.IsFocusRight() {
 		hints = []string{"j/k:scroll", "esc:back"}
 		if m.currentIssue != nil {
-			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI", "x:exclude")
+			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI", "u:unassign", "x:exclude")
 		}
 	} else {
 		hints = []string{"l:list", "s:settings", "?:help", "q:quit"}
@@ -523,7 +547,7 @@ func (m Model) renderStatusBar() string {
 			hints = append(hints, "enter:focus detail")
 		}
 		if m.currentIssue != nil {
-			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI", "x:exclude")
+			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI", "u:unassign", "x:exclude")
 		}
 	}
 
@@ -601,6 +625,17 @@ func (m Model) doTransitionCmd(transitionID string) tea.Cmd {
 			return shared.ErrMsg{Err: fmt.Errorf("transition failed: %w", err)}
 		}
 		return shared.TransitionDoneMsg{}
+	}
+}
+
+func (m Model) doUnassignCmd() tea.Cmd {
+	client := m.jiraClient
+	key := m.currentIssue.Key
+	return func() tea.Msg {
+		if err := client.UnassignIssue(context.Background(), key); err != nil {
+			return shared.ErrMsg{Err: fmt.Errorf("unassign failed: %w", err)}
+		}
+		return shared.UnassignDoneMsg{}
 	}
 }
 

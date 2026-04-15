@@ -241,6 +241,36 @@ func (c *Client) GetTransitions(ctx context.Context, key string) ([]Transition, 
 	return transitions, nil
 }
 
+// UnassignIssue removes the assignee from an issue.
+func (c *Client) UnassignIssue(ctx context.Context, key string) error {
+	payload := map[string]interface{}{
+		"accountId": nil,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := c.newRequest(http.MethodPut, "/rest/api/3/issue/"+key+"/assignee", bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req = req.WithContext(ctx)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
 // DoTransition performs a transition on an issue.
 func (c *Client) DoTransition(ctx context.Context, key, transitionID string) error {
 	payload := map[string]interface{}{

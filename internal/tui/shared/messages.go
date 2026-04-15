@@ -41,5 +41,8 @@ type ExcludeActionMsg struct {
 	Value string // issue key or parent key
 }
 
+// Unassign
+type UnassignDoneMsg struct{}
+
 // Theme
 type ThemeSelectedMsg struct{ Name string }

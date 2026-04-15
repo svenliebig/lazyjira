@@ -15,6 +15,7 @@ If a user is on an issue, may it be on the details page of the issue or highligh
 - `a` opens the modal for AI assistance
   - `a-s` creates a summary of the work on the issue, for that we use a [Local LLM](./LOCAL_LLM.md) to generate a summary of the work done. The work is done is resulting from the commits that are linked to the issue, for that the tool can query the git log that is associated with the issue. This action has to be performed while in the directory of the repository. If there is no git repository in the directory, the tool will prompt the user to navigate to a git repository when calling the tool.
 - `t` opens the modal for transition the issue to a new status, the available transitions are listed in the modal, mostly fetched beforehand somehow cached or fetched on demand. The user can then select the new status by pressing the number of the status.
+- `u` unassigns the current issue immediately. The issue is removed from the assigned list without confirmation since it is directly reversible in Jira. A status message "Unassigned" is shown after success.
 - `x` opens the modal for excluding the issue from the list
   - `x-p` excludes all issues that share the same parent issue. This option is only available if the issue has a parent; it is shown as strikethrough and non-interactive otherwise.
   - `x-k` excludes the specific issue by its key. The issue will no longer appear in the assigned issues list until the exclusion is removed via `l → x`.
