@@ -62,7 +62,7 @@ func NewIssueListModel(issues []jira.Issue, width, height int) IssueListModel {
 
 	delegate := list.NewDefaultDelegate()
 	l := list.New(items, delegate, leftW, height)
-	l.Title = "Issues"
+	l.SetShowTitle(false)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)
@@ -200,8 +200,10 @@ func buildIssueDetail(issue jira.Issue, width int) string {
 	sb.WriteString(shared.StyleNormalItem.Render(issue.Fields.Summary))
 	sb.WriteString("\n\n")
 
-	sb.WriteString(shared.StyleMuted.Render("Status:   "))
-	sb.WriteString(shared.StyleIssueStatus.Render(issue.Fields.Status.Name))
+	sb.WriteString(lipgloss.JoinHorizontal(lipgloss.Center,
+		shared.StyleMuted.Render("Status:   "),
+		shared.StyleIssueStatus.Render(issue.Fields.Status.Name),
+	))
 	sb.WriteString("\n\n")
 
 	if issue.Fields.Assignee != nil {
