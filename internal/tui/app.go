@@ -41,6 +41,7 @@ const (
 	modalTransition
 	modalExclude
 	modalSettings
+	modalAssign
 )
 
 // Model is the root bubbletea model.
@@ -69,6 +70,7 @@ type Model struct {
 	transitionModal modals.TransitionModal
 	excludeModal    modals.ExcludeModal
 	settingsModal   modals.SettingsModal
+	assignModal     modals.AssignModal
 
 	// State
 	currentIssue  *jira.Issue
@@ -248,6 +250,37 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusMsg = "Unassigned"
 		return m, nil
 
+	case shared.UsersLoadedMsg:
+		m.assignModal = modals.NewAssignModal(msg.Users)
+		m.activeModal = modalAssign
+		m.loading = false
+		return m, nil
+
+	case shared.UserSelectedMsg:
+		if m.currentIssue != nil && m.jiraClient != nil {
+			m.activeModal = modalNone
+			m.loading = true
+			return m, m.doAssignCmd(msg.User)
+		}
+		return m, nil
+
+	case shared.AssignDoneMsg:
+		m.loading = false
+		if m.currentIssue != nil {
+			key := m.currentIssue.Key
+			for i, iss := range m.allIssues {
+				if iss.Key == key {
+					m.allIssues[i].Fields.Assignee = &msg.User
+					break
+				}
+			}
+			if m.currentIssue.Fields.Assignee != nil {
+				m.currentIssue.Fields.Assignee = &msg.User
+			}
+		}
+		m.statusMsg = "Assigned to " + msg.User.DisplayName
+		return m, nil
+
 	case shared.ThemeSelectedMsg:
 		if t, ok := theme.FindByName(msg.Name, m.customThemes); ok {
 			theme.SetTheme(t)
@@ -402,6 +435,12 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+	case shared.KeyAssign:
+		if m.currentIssue != nil && m.jiraClient != nil {
+			m.loading = true
+			return m, m.fetchAssignableUsersCmd()
+		}
+
 	case shared.KeyUnassign:
 		if m.currentIssue != nil && m.jiraClient != nil {
 			m.loading = true
@@ -454,6 +493,10 @@ func (m Model) updateActiveChild(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var updated tea.Model
 		updated, cmd = m.settingsModal.Update(msg)
 		m.settingsModal = updated.(modals.SettingsModal)
+	case modalAssign:
+		var updated tea.Model
+		updated, cmd = m.assignModal.Update(msg)
+		m.assignModal = updated.(modals.AssignModal)
 	default:
 		switch m.currentView {
 		case viewIssueList:
@@ -539,7 +582,7 @@ func (m Model) renderStatusBar() string {
 	} else if m.currentView == viewIssueList && m.issueListView.IsFocusRight() {
 		hints = []string{"j/k:scroll", "esc:back"}
 		if m.currentIssue != nil {
-			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI", "u:unassign", "x:exclude")
+			hints = append(hints, "o:open", "y:copy", "t:transition", "a:assign", "u:unassign", "m:AI", "x:exclude")
 		}
 	} else {
 		hints = []string{"l:list", "s:settings", "?:help", "q:quit"}
@@ -547,7 +590,7 @@ func (m Model) renderStatusBar() string {
 			hints = append(hints, "enter:focus detail")
 		}
 		if m.currentIssue != nil {
-			hints = append(hints, "o:open", "y:copy", "t:transition", "a:AI", "u:unassign", "x:exclude")
+			hints = append(hints, "o:open", "y:copy", "t:transition", "a:assign", "u:unassign", "m:AI", "x:exclude")
 		}
 	}
 
@@ -589,6 +632,8 @@ func (m Model) renderModal() string {
 		return m.excludeModal.View()
 	case modalSettings:
 		return m.settingsModal.View()
+	case modalAssign:
+		return m.assignModal.View()
 	}
 	return ""
 }
@@ -636,6 +681,29 @@ func (m Model) doUnassignCmd() tea.Cmd {
 			return shared.ErrMsg{Err: fmt.Errorf("unassign failed: %w", err)}
 		}
 		return shared.UnassignDoneMsg{}
+	}
+}
+
+func (m Model) fetchAssignableUsersCmd() tea.Cmd {
+	client := m.jiraClient
+	key := m.currentIssue.Key
+	return func() tea.Msg {
+		users, err := client.SearchAssignableUsers(context.Background(), key)
+		if err != nil {
+			return shared.ErrMsg{Err: fmt.Errorf("failed to load users: %w", err)}
+		}
+		return shared.UsersLoadedMsg{Users: users}
+	}
+}
+
+func (m Model) doAssignCmd(user jira.User) tea.Cmd {
+	client := m.jiraClient
+	key := m.currentIssue.Key
+	return func() tea.Msg {
+		if err := client.AssignIssue(context.Background(), key, user.AccountID); err != nil {
+			return shared.ErrMsg{Err: fmt.Errorf("assign failed: %w", err)}
+		}
+		return shared.AssignDoneMsg{User: user}
 	}
 }
 

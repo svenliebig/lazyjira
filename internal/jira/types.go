@@ -24,6 +24,7 @@ type IssueStatus struct {
 }
 
 type User struct {
+	AccountID    string
 	DisplayName  string
 	EmailAddress string
 }

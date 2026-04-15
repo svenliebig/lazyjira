@@ -91,6 +91,7 @@ type statusResponse struct {
 }
 
 type userResponse struct {
+	AccountID    string `json:"accountId"`
 	DisplayName  string `json:"displayName"`
 	EmailAddress string `json:"emailAddress"`
 }
@@ -121,12 +122,14 @@ func convertIssue(r issueResponse) Issue {
 	}
 	if r.Fields.Assignee != nil {
 		issue.Fields.Assignee = &User{
+			AccountID:    r.Fields.Assignee.AccountID,
 			DisplayName:  r.Fields.Assignee.DisplayName,
 			EmailAddress: r.Fields.Assignee.EmailAddress,
 		}
 	}
 	if r.Fields.Reporter != nil {
 		issue.Fields.Reporter = &User{
+			AccountID:    r.Fields.Reporter.AccountID,
 			DisplayName:  r.Fields.Reporter.DisplayName,
 			EmailAddress: r.Fields.Reporter.EmailAddress,
 		}
@@ -245,6 +248,71 @@ func (c *Client) GetTransitions(ctx context.Context, key string) ([]Transition, 
 func (c *Client) UnassignIssue(ctx context.Context, key string) error {
 	payload := map[string]interface{}{
 		"accountId": nil,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	req, err := c.newRequest(http.MethodPut, "/rest/api/3/issue/"+key+"/assignee", bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req = req.WithContext(ctx)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// SearchAssignableUsers returns users that can be assigned to the given issue.
+func (c *Client) SearchAssignableUsers(ctx context.Context, issueKey string) ([]User, error) {
+	req, err := c.newRequest(http.MethodGet, "/rest/api/3/user/assignable/search?issueKey="+issueKey+"&maxResults=50", nil)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var results []userResponse
+	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	users := make([]User, len(results))
+	for i, u := range results {
+		users[i] = User{
+			AccountID:    u.AccountID,
+			DisplayName:  u.DisplayName,
+			EmailAddress: u.EmailAddress,
+		}
+	}
+	return users, nil
+}
+
+// AssignIssue sets the assignee of an issue to the given account ID.
+func (c *Client) AssignIssue(ctx context.Context, key, accountID string) error {
+	payload := map[string]interface{}{
+		"accountId": accountID,
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {

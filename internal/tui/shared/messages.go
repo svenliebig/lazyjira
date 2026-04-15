@@ -44,5 +44,10 @@ type ExcludeActionMsg struct {
 // Unassign
 type UnassignDoneMsg struct{}
 
+// Assign
+type UsersLoadedMsg struct{ Users []jira.User }
+type UserSelectedMsg struct{ User jira.User }
+type AssignDoneMsg struct{ User jira.User }
+
 // Theme
 type ThemeSelectedMsg struct{ Name string }
