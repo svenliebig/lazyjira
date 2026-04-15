@@ -74,12 +74,25 @@ type issueResponse struct {
 }
 
 type issueFieldsResponse struct {
-	Summary     string          `json:"summary"`
-	Description json.RawMessage `json:"description"`
-	Status      statusResponse  `json:"status"`
-	Assignee    *userResponse   `json:"assignee"`
-	Reporter    *userResponse   `json:"reporter"`
-	Parent      *parentResponse `json:"parent"`
+	Summary      string               `json:"summary"`
+	Description  json.RawMessage      `json:"description"`
+	Status       statusResponse       `json:"status"`
+	Assignee     *userResponse        `json:"assignee"`
+	Reporter     *userResponse        `json:"reporter"`
+	Parent       *parentResponse      `json:"parent"`
+	Sprints      []sprintResponse     `json:"customfield_10020"`
+	TimeTracking timeTrackingResponse `json:"timetracking"`
+}
+
+type sprintResponse struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	State string `json:"state"`
+}
+
+type timeTrackingResponse struct {
+	OriginalEstimateSeconds  int `json:"originalEstimateSeconds"`
+	RemainingEstimateSeconds int `json:"remainingEstimateSeconds"`
 }
 
 type parentResponse struct {
@@ -134,6 +147,14 @@ func convertIssue(r issueResponse) Issue {
 	if r.Fields.Parent != nil {
 		issue.Fields.Parent = &IssueParent{Key: r.Fields.Parent.Key}
 	}
+	if len(r.Fields.Sprints) > 0 {
+		s := r.Fields.Sprints[len(r.Fields.Sprints)-1]
+		issue.Fields.Sprint = &Sprint{ID: s.ID, Name: s.Name, State: s.State}
+	}
+	issue.Fields.TimeTracking = TimeTracking{
+		OriginalEstimateSeconds:  r.Fields.TimeTracking.OriginalEstimateSeconds,
+		RemainingEstimateSeconds: r.Fields.TimeTracking.RemainingEstimateSeconds,
+	}
 	return issue
 }
 
@@ -142,7 +163,7 @@ func (c *Client) ListAssigned(ctx context.Context) ([]Issue, error) {
 	payload := map[string]interface{}{
 		"jql":        "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC",
 		"maxResults": 50,
-		"fields":     []string{"summary", "description", "status", "assignee", "reporter", "parent"},
+		"fields":     []string{"summary", "description", "status", "assignee", "reporter", "parent", "customfield_10020", "timetracking"},
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
