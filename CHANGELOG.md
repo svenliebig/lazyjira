@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.0](https://github.com/svenliebig/lazyjira/compare/v1.4.0...v1.5.0) (2026-04-15)
+
+
+### Features
+
+* add boards feature and sprint assignments in tickets ([f943b3f](https://github.com/svenliebig/lazyjira/commit/f943b3fc2dcd335327b55a6684d16011cc87bbcd))
+
+
+### Bug Fixes
+
+* status alignment and duplicated issue header in issue list ([c5d1364](https://github.com/svenliebig/lazyjira/commit/c5d13644e7c5d49f0badfb63de7bd057b4cc61a1))
+
 ## [1.4.0](https://github.com/svenliebig/lazyjira/compare/v1.3.0...v1.4.0) (2026-04-15)
 
 
