@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // adfToText converts an Atlassian Document Format JSON object to plain text.
@@ -25,7 +27,40 @@ func adfToText(raw json.RawMessage) string {
 		return ""
 	}
 
+	var nodeType string
+	if typeRaw, ok := node["type"]; ok {
+		json.Unmarshal(typeRaw, &nodeType) //nolint:errcheck
+	}
+
+	// Special handling for table: collect rows/cells and render with alignment
+	if nodeType == "table" {
+		return adfTableToText(node)
+	}
+
+	// Special handling for date: render timestamp as YYYY-MM-DD
+	if nodeType == "date" {
+		return adfDateToText(node)
+	}
+
 	var sb strings.Builder
+
+	// taskItem: prefix with checkbox indicator
+	if nodeType == "taskItem" {
+		state := "TODO"
+		if attrsRaw, ok := node["attrs"]; ok {
+			var attrs map[string]json.RawMessage
+			if json.Unmarshal(attrsRaw, &attrs) == nil {
+				if stateRaw, ok2 := attrs["state"]; ok2 {
+					json.Unmarshal(stateRaw, &state) //nolint:errcheck
+				}
+			}
+		}
+		if state == "DONE" {
+			sb.WriteString("[x] ")
+		} else {
+			sb.WriteString("[ ] ")
+		}
+	}
 
 	// Check for text field
 	if textRaw, ok := node["text"]; ok {
@@ -46,19 +81,146 @@ func adfToText(raw json.RawMessage) string {
 	}
 
 	// Add newline after block nodes
-	if typeRaw, ok := node["type"]; ok {
-		var nodeType string
-		if err := json.Unmarshal(typeRaw, &nodeType); err == nil {
-			switch nodeType {
-			case "paragraph", "heading", "bulletList", "orderedList", "listItem", "blockquote", "codeBlock", "rule":
-				if sb.Len() > 0 {
-					sb.WriteString("\n")
-				}
-			}
+	switch nodeType {
+	case "paragraph", "heading", "bulletList", "orderedList", "listItem", "blockquote", "codeBlock", "rule", "taskItem":
+		if sb.Len() > 0 {
+			sb.WriteString("\n")
 		}
 	}
 
 	return sb.String()
+}
+
+// adfTableToText renders an ADF table node as aligned plain text.
+func adfTableToText(node map[string]json.RawMessage) string {
+	contentRaw, ok := node["content"]
+	if !ok {
+		return ""
+	}
+	var rowNodes []json.RawMessage
+	if err := json.Unmarshal(contentRaw, &rowNodes); err != nil {
+		return ""
+	}
+
+	type tableRow struct {
+		cells    []string
+		isHeader bool
+	}
+	var rows []tableRow
+
+	for _, rowRaw := range rowNodes {
+		var rowNode map[string]json.RawMessage
+		if err := json.Unmarshal(rowRaw, &rowNode); err != nil {
+			continue
+		}
+		cellsRaw, ok := rowNode["content"]
+		if !ok {
+			continue
+		}
+		var cellNodes []json.RawMessage
+		if err := json.Unmarshal(cellsRaw, &cellNodes); err != nil {
+			continue
+		}
+
+		var row tableRow
+		for i, cellRaw := range cellNodes {
+			var cellNode map[string]json.RawMessage
+			if err := json.Unmarshal(cellRaw, &cellNode); err != nil {
+				continue
+			}
+			if i == 0 {
+				var cellType string
+				if typeRaw, ok := cellNode["type"]; ok {
+					json.Unmarshal(typeRaw, &cellType) //nolint:errcheck
+				}
+				row.isHeader = cellType == "tableHeader"
+			}
+			row.cells = append(row.cells, strings.TrimSpace(adfToText(cellRaw)))
+		}
+		rows = append(rows, row)
+	}
+
+	if len(rows) == 0 {
+		return ""
+	}
+
+	// Compute column widths
+	numCols := 0
+	for _, row := range rows {
+		if len(row.cells) > numCols {
+			numCols = len(row.cells)
+		}
+	}
+	colWidths := make([]int, numCols)
+	for _, row := range rows {
+		for i, cell := range row.cells {
+			if len(cell) > colWidths[i] {
+				colWidths[i] = len(cell)
+			}
+		}
+	}
+
+	var sb strings.Builder
+	for _, row := range rows {
+		for i := 0; i < numCols; i++ {
+			if i > 0 {
+				sb.WriteString(" | ")
+			}
+			cell := ""
+			if i < len(row.cells) {
+				cell = row.cells[i]
+			}
+			sb.WriteString(cell)
+			// Pad all but the last column
+			if i < numCols-1 {
+				for j := len(cell); j < colWidths[i]; j++ {
+					sb.WriteByte(' ')
+				}
+			}
+		}
+		sb.WriteString("\n")
+		if row.isHeader {
+			for i := 0; i < numCols; i++ {
+				if i > 0 {
+					sb.WriteString("-+-")
+				}
+				for j := 0; j < colWidths[i]; j++ {
+					sb.WriteByte('-')
+				}
+			}
+			sb.WriteString("\n")
+		}
+	}
+
+	return sb.String()
+}
+
+// adfDateToText converts an ADF date node (attrs.timestamp in Unix ms) to YYYY-MM-DD.
+func adfDateToText(node map[string]json.RawMessage) string {
+	attrsRaw, ok := node["attrs"]
+	if !ok {
+		return ""
+	}
+	var attrs map[string]json.RawMessage
+	if err := json.Unmarshal(attrsRaw, &attrs); err != nil {
+		return ""
+	}
+	tsRaw, ok := attrs["timestamp"]
+	if !ok {
+		return ""
+	}
+	// Timestamp may be a JSON string or number
+	var tsMS int64
+	var tsStr string
+	if err := json.Unmarshal(tsRaw, &tsStr); err == nil {
+		tsMS, _ = strconv.ParseInt(tsStr, 10, 64)
+	} else {
+		json.Unmarshal(tsRaw, &tsMS) //nolint:errcheck
+	}
+	if tsMS == 0 {
+		return ""
+	}
+	return time.Unix(tsMS/1000, 0).UTC().Format("2006-01-02")
 }
 
 // Response types for JSON unmarshaling

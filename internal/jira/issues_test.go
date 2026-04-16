@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -137,6 +138,74 @@ func TestListAssigned_EmptyResponse(t *testing.T) {
 	}
 	if len(issues) != 0 {
 		t.Errorf("Expected 0 issues, got %d", len(issues))
+	}
+}
+
+func TestAdfToText_Table(t *testing.T) {
+	raw := json.RawMessage(`{
+		"type": "doc",
+		"version": 1,
+		"content": [
+			{
+				"type": "paragraph",
+				"content": [{"type": "text", "text": "Intro text"}]
+			},
+			{
+				"type": "table",
+				"content": [
+					{
+						"type": "tableRow",
+						"content": [
+							{"type": "tableHeader", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Image"}]}]},
+							{"type": "tableHeader", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Tag"}]}]},
+							{"type": "tableHeader", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "Comment"}]}]}
+						]
+					},
+					{
+						"type": "tableRow",
+						"content": [
+							{"type": "tableCell", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "backend-core"}]}]},
+							{"type": "tableCell", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "main-abc123"}]}]},
+							{"type": "tableCell", "content": [
+								{"type": "taskList", "content": [
+									{"type": "taskItem", "attrs": {"state": "TODO"}, "content": [
+										{"type": "text", "text": "Deployed at "},
+										{"type": "date", "attrs": {"timestamp": "1776297600000"}}
+									]}
+								]}
+							]}
+						]
+					}
+				]
+			}
+		]
+	}`)
+
+	got := adfToText(raw)
+
+	if !strings.Contains(got, "Image") {
+		t.Error("Expected table header 'Image' in output")
+	}
+	if !strings.Contains(got, "Tag") {
+		t.Error("Expected table header 'Tag' in output")
+	}
+	if !strings.Contains(got, "backend-core") {
+		t.Error("Expected 'backend-core' in output")
+	}
+	if !strings.Contains(got, " | ") {
+		t.Error("Expected column separator ' | ' in output")
+	}
+	if !strings.Contains(got, "---") {
+		t.Error("Expected header separator '---' in output")
+	}
+	if !strings.Contains(got, "[ ]") {
+		t.Error("Expected task item '[ ]' in output")
+	}
+	if !strings.Contains(got, "2026-04-16") {
+		t.Error("Expected date '2026-04-16' in output")
+	}
+	if !strings.Contains(got, "Intro text") {
+		t.Error("Expected 'Intro text' in output")
 	}
 }
 
