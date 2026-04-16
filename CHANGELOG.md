@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/svenliebig/lazyjira/compare/v1.5.0...v1.6.0) (2026-04-16)
+
+
+### Features
+
+* add support for table in issue descriptions ([57830af](https://github.com/svenliebig/lazyjira/commit/57830af0af9f6da71b947545094e329760b72045))
+
 ## [1.5.0](https://github.com/svenliebig/lazyjira/compare/v1.4.0...v1.5.0) (2026-04-15)
 
 
